@@ -54,6 +54,11 @@ local tColor = {
 	red = hexToCColor("c6002a"),
 	green = hexToCColor("01a825"),
 	blue = hexToCColor("00b0d8"),
+	xkcdAquaBlueAlpha = hexToCColor("00a0c4","0.5"),
+	yellowAlpha = hexToCColor("fff600","0.5"),
+	orangeAlpha = hexToCColor("feb408","0.5"),
+	redAlpha = hexToCColor("c6002a","0.5"),
+	greenAlpha = hexToCColor("01a825","0.5"),
 }
 
 -----------------------------------------------------------------------------------------------
@@ -65,8 +70,8 @@ function addon:OnLoad()
 
 	self.wFocus = Apollo.LoadForm("EsperPP.xml", "Focus", nil, self)
 	self.wFocus:Show(true)
-	self.wFocus:FindChild("FocusProgress"):SetBarColor(tColor.xkcdAquaBlue)
-	self.wFocus:FindChild("FocusProgress"):SetBGColor(tColor.orange)
+	self.wFocus:FindChild("FocusProgress"):SetBarColor(tColor.xkcdAquaBlueAlpha)
+	self.wFocus:FindChild("FocusProgress"):SetBGColor(tColor.greenAlpha)
 
 	self.wDisplay = Apollo.LoadForm("EsperPP.xml", "Display", nil, self)
 	self.wDisplay:Show(true)
@@ -151,6 +156,8 @@ end
 
 function addon:OnUpdate()
 	local uPlayer = GameLib.GetPlayerUnit()
+	local nManaCurr = uPlayer:GetMana()
+	local nManaMax = uPlayer:GetMaxMana()
 	if not uPlayer then return end
 	if uPlayer:GetClassId() ~= 3 then self.wDisplay:Show(false) self.wAnchor:Show(false) return end -- not esper
 	self.wDisplay:Show(true)
@@ -215,6 +222,17 @@ function addon:OnUpdate()
 		local bar = self.wFocus:FindChild("FocusProgress")
 		bar:SetMax(uPlayer:GetMaxMana())
 		bar:SetProgress(uPlayer:GetMana())
+		if ((nManaCurr / nManaMax) <= 0.25) then -- Reactive Color Change on Focus Loss
+			self.wFocus:FindChild("FocusProgress"):SetBGColor(tColor.redAlpha)
+		elseif ((nManaCurr / nManaMax) <= 0.50) then 
+			self.wFocus:FindChild("FocusProgress"):SetBGColor(tColor.orangeAlpha)
+		elseif ((nManaCurr / nManaMax) <= 0.75) then
+			self.wFocus:FindChild("FocusProgress"):SetBGColor(tColor.yellowAlpha)
+		else
+			self.wFocus:FindChild("FocusProgress"):SetBGColor(tColor.greenAlpha)
+
+			
+		end
 	end
 
 end
