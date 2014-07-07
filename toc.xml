@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caleb" APIVersion="8" Name="EsperPP" Description="Very basic Psi Point tracker" Version="8.1.0.1">
+<Addon Author="Caleb" APIVersion="8" Name="EsperPP" Description="Very basic Psi Point tracker" Version="8.1.0.2">
 	<Script Name="Libs/GeminiAddon/GeminiAddon.lua"/>
 	<Script Name="Libs/GeminiColor/GeminiColor.lua"/>
 	<Script Name="Libs/GeminiDB/GeminiDB-1.0.lua"/>
@@ -11,3 +11,4 @@
 	<Script Name="EsperPP.lua"/>
 	<Form Name="EsperPP.xml"/>
 </Addon>
+
