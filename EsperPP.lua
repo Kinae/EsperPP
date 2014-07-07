@@ -1,10 +1,11 @@
 -----------------------------------------------------------------------------------------------
--- Client Lua Script for EsperPP
--- Not so basic Esper helper
+-- EsperPP
+-- Not so basic Esper helper by Caleb - calebzor@gmail.com
 -----------------------------------------------------------------------------------------------
 
 --[[
 	TODO:
+		play sound when reahing 5 pp
 		more CB customization
 		font customization
 		psi charge tracking through buff window container
@@ -13,7 +14,7 @@
 		move options to it's own file
 ]]--
 
-local sVersion = "8.1.0.2"
+local sVersion = "8.1.0.3"
 
 require "Window"
 require "GameLib"
@@ -21,6 +22,9 @@ require "CColor"
 require "ActionSetLib"
 require "AbilityBook"
 
+-----------------------------------------------------------------------------------------------
+-- Upvalues
+-----------------------------------------------------------------------------------------------
 local setmetatable = setmetatable
 local tonumber = tonumber
 local string = string
@@ -35,6 +39,9 @@ local Print = Print
 local unpack = unpack
 local math = math
 
+-----------------------------------------------------------------------------------------------
+-- Package loading
+-----------------------------------------------------------------------------------------------
 local addon = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon("EsperPP", false, {}, "Gemini:Timer-1.0")
 local GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
 local GeminiGUI = Apollo.GetPackage("Gemini:GUI-1.0").tPackage
@@ -43,6 +50,9 @@ local GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
 --local GeminiCmd = Apollo.GetPackage("Gemini:ConfigCmd-1.0").tPackage
 local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", true)
 
+-----------------------------------------------------------------------------------------------
+-- Locals and defaults
+-----------------------------------------------------------------------------------------------
 local uPlayer = nil
 
 --local function hexToCColor(color, a)
@@ -91,6 +101,10 @@ local defaults = {
 	}
 }
 
+-----------------------------------------------------------------------------------------------
+-- Options tables
+-----------------------------------------------------------------------------------------------
+
 local tMyFontTable = {}
 for nIndex,font in ipairs(Apollo.GetGameFonts()) do
 	tMyFontTable[nIndex] = font.name
@@ -123,21 +137,8 @@ local function formatFocusText(formatType, nCurr, nMax)
 	end
 end
 
-
-function addon:LockUnlock(bValue)
-	self.wAnchor:Show(bValue)
-	self.db.profile.bFocusLocked = not bValue
-	if bValue then
-		self.wFocus:Show(true)
-	end
-	self.db.profile.bFocusShown = self.wFocus:IsShown()
-	self.wFocus:FindChild("Header"):Show(bValue)
-	self.wFocus:SetStyle("Moveable", bValue)
-	self.wFocus:SetStyle("Sizable", bValue)
-end
-
 -----------------------------------------------------------------------------------------------
--- EsperPP OnEnable
+-- Initialization
 -----------------------------------------------------------------------------------------------
 function addon:OnInitialize()
 	self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, defaults)
@@ -391,6 +392,7 @@ function addon:OnInitialize()
 		}
 	}
 end
+
 function addon:OnEnable()
 	if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Esper then return end -- not esper
 
@@ -455,18 +457,8 @@ function addon:OnEnable()
 end
 
 -----------------------------------------------------------------------------------------------
--- EsperPP Functions
+-- Ability related functions
 -----------------------------------------------------------------------------------------------
-
-function addon:OpenMenu(_, input)
-  -- Assuming "MyOptions" is the appName of a valid options table
-	Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
-	--if not input or input:trim() == "" then
-	--LibStub("AceConfigDialog-3.0"):Open("MyOptions")
-	--else
-	--LibStub("AceConfigCmd-3.0").HandleCommand(MyAddon, "mychat", "MyOptions", input)
-	--end
-end
 
 function addon:getCBSpellIds()
 	local tList = AbilityBook.GetAbilitiesList()
@@ -540,6 +532,10 @@ function addon:OnAbilityBookChange()
 	--Apollo.CreateTimer("DelayedAbilityBookCheck", 0.2, false)
 	self:ScheduleTimer("DelayedAbilityBookCheck", 0.2)
 end
+
+-----------------------------------------------------------------------------------------------
+-- Updaters
+-----------------------------------------------------------------------------------------------
 
 function addon:FastTimer()
 	self.nMyTime = self.nMyTime + 1
@@ -629,6 +625,32 @@ function addon:OnUpdate()
 
 end
 
+-----------------------------------------------------------------------------------------------
+-- Window management
+-----------------------------------------------------------------------------------------------
+
+function addon:LockUnlock(bValue)
+	self.wAnchor:Show(bValue)
+	self.db.profile.bFocusLocked = not bValue
+	if bValue then
+		self.wFocus:Show(true)
+	end
+	self.db.profile.bFocusShown = self.wFocus:IsShown()
+	self.wFocus:FindChild("Header"):Show(bValue)
+	self.wFocus:SetStyle("Moveable", bValue)
+	self.wFocus:SetStyle("Sizable", bValue)
+end
+
+function addon:OpenMenu(_, input)
+  -- Assuming "MyOptions" is the appName of a valid options table
+	Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+	--if not input or input:trim() == "" then
+	--LibStub("AceConfigDialog-3.0"):Open("MyOptions")
+	--else
+	--LibStub("AceConfigCmd-3.0").HandleCommand(MyAddon, "mychat", "MyOptions", input)
+	--end
+end
+
 function addon:RepositionDisplay()
 	local l,t,r,b = self.wAnchor:GetAnchorOffsets()
 	self.wDisplay:SetAnchorOffsets(l, b, l+94, b+111) -- This has to be updated if the frame is resized in houston ( or probably should look into move to position or something)
@@ -662,10 +684,6 @@ function addon:HideFocus()
 	self.db.profile.bFocusShown = false
 end
 
------------------------------------------------------------------------------------------------
--- Savedvariables
------------------------------------------------------------------------------------------------
-
 function addon:OnSlashCommand(_, input)
 	self.wAnchor:Show(true)
 	self.db.profile.locked = false
@@ -676,6 +694,12 @@ function addon:OnSlashCommand(_, input)
 	self.wFocus:SetStyle("Moveable", true)
 	self.wFocus:SetStyle("Sizable", true)
 end
+
+
+-----------------------------------------------------------------------------------------------
+-- Savedvariables
+-----------------------------------------------------------------------------------------------
+
 --[[
 function addon:OnSave(eLevel)
 	if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then return end
