@@ -11,11 +11,10 @@
         psi charge tracking through buff window container
         move EVERYTHING to GeminiGUI
         localization
-        move options to it's own file
-        
+        move options to it's own file        
 ]]--
 
-local sVersion = "8.1.0.66"
+local sVersion = "8.1.0.68"
 
 require "Window"
 require "GameLib"
