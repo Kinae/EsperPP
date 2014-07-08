@@ -14,7 +14,7 @@
         move options to it's own file
 ]]--
 
-local sVersion = "8.1.0.204"
+local sVersion = "8.1.0.61"
 
 require "Window"
 require "GameLib"
