@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Addon Author="NeoTron" APIVersion="8" Name="Gemini:Config" Description="A library for addon configuration and GUI management."> 
+  <Script Name="GeminiConfig-1.0.lua"/>
+</Addon>
