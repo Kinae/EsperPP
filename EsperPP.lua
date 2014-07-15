@@ -14,7 +14,7 @@
         move options to it's own file
 ]]--
 
-local sVersion = "8.1.0.71"
+local sVersion = "8.1.0.72"
 
 require "Window"
 require "GameLib"
@@ -54,24 +54,6 @@ local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", t
 -- Locals and defaults
 -----------------------------------------------------------------------------------------------
 local uPlayer = nil
-
---local function hexToCColor(color, a)
---  if not a then a = 1 end
---  local r = tonumber(string.sub(color,1,2), 16) / 255
---  local g = tonumber(string.sub(color,3,4), 16) / 255
---  local b = tonumber(string.sub(color,5,6), 16) / 255
---  return CColor.new(r,g,b,a)
---end
---
---local tColor = {
---  xkcdAquaBlue = hexToCColor("02d8e9"),
---  xkcdAlgaeGreen = hexToCColor("21c36f"),
---  yellow = hexToCColor("fff600"),
---  orange = hexToCColor("feb408"),
---  red = hexToCColor("c6002a"),
---  green = hexToCColor("01a825"),
---  blue = hexToCColor("00b0d8"),
---}
 
 local defaults = {
     profile = {
