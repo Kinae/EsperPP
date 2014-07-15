@@ -11,10 +11,10 @@
         psi charge tracking through buff window container
         move EVERYTHING to GeminiGUI
         localization
-        move options to it's own file        
+        move options to it's own file
 ]]--
 
-local sVersion = "8.1.0.70"
+local sVersion = "8.1.0.71"
 
 require "Window"
 require "GameLib"
@@ -392,7 +392,9 @@ function addon:OnInitialize()
         }
     }
 end
-
+-----------------------------------------------------------------------------------------------
+-- OnEnable
+-----------------------------------------------------------------------------------------------
 function addon:OnEnable()
     if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Esper then return end -- not esper
 
@@ -426,8 +428,6 @@ function addon:OnEnable()
 
     self.nMyTime = 1
     self.fastTimer = self:ScheduleRepeatingTimer("FastTimer", 0.1)
-    --Apollo.RegisterTimerHandler("FastTimer", "FastTimer", self)
-    --Apollo.CreateTimer("FastTimer", 0.1, true)
 
     self.abilityBookTimer = self:ScheduleRepeatingTimer("DelayedAbilityBookCheck", 1)
 
