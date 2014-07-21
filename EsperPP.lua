@@ -14,7 +14,7 @@
         move options to it's own file
 ]]--
 
-local sVersion = "9.1.0.73"
+local sVersion = "9.1.0.74"
 
 require "Window"
 require "GameLib"
@@ -57,12 +57,13 @@ local uPlayer = nil
 
 local defaults = {
     profile = {
+        locked = false,
         tPos = {},
         tFocusPos = {},
         focusBarColor = {0.13,0.76,0.44,1},
         focusBarBackgroundColor = {0.78,0,0.16,1},
-        focusFontStyle = 6,
-        focusTextStyle = 1,
+        focusFont = 73, -- CRB_Interface14_BO
+        focusTextStyle = "def",
         focusTextColor = {1,1,1,1},
         nFocusOpacity = 0.7,
         bReactiveFocusColor = false,
@@ -93,10 +94,10 @@ for nIndex,font in ipairs(Apollo.GetGameFonts()) do
 end
 
 local tFocusTextStyle = {
-    "None",
-    "Percentage",
-    "Default",
-    "Current",
+    none = "None",
+    perc = "Percentage",
+    def = "Default",
+    currOnly = "Current",
 }
 
 local tFocusTextStyleFormat = {
@@ -141,6 +142,9 @@ function addon:OnInitialize()
                 name = "Focus bar",
                 type = "group",
                 args={
+-----------------------------------------------------------------------------------------------
+-- Focus options
+-----------------------------------------------------------------------------------------------
                     focusHeader = {
                         order = 1,
                         name = "Focus bar settings",
@@ -178,6 +182,9 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity)) end,
                     },
+-----------------------------------------------------------------------------------------------
+-- Focus font and text options
+-----------------------------------------------------------------------------------------------
                     focusTextColor = {
                         order = 25,
                         name = "Text color",
@@ -186,26 +193,29 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetTextColor(CColor.new(r,g,b,a)) end,
                     },
-                    --focusFontStyle = {
-                    --  order = 30,
-                    --  width = "full",
-                    --  name = "Font style",
-                    --  type = "select",
-                    --  values = tMyFontTable,
-                    --  style = "dropdown",
-                    --  get = function(info) return self.db.profile[info[#info]] end,
-                    --  set = function(info, v) self.db.profile[info[#info]] = v; self.wFocus:FindChild("FocusProgress"):SetFont(v) end,
-                    --},
-                    --focusTextStyle = {
-                    --  order = 50,
-                    --  width = "full",
-                    --  name = "Text style",
-                    --  type = "select",
-                    --  values = tFocusTextStyle,
-                    --  style = "dropdown",
-                    --  get = function(info) return self.db.profile[info[#info]] end,
-                    --  set = function(info, v) self.db.profile[info[#info]] = v end,
-                    --},
+                    focusFont = {
+                      order = 30,
+                      width = "full",
+                      name = "Font style",
+                      type = "select",
+                      values = tMyFontTable,
+                      style = "dropdown",
+                      get = function(info) return self.db.profile[info[#info]] end,
+                      set = function(info, v) self.db.profile[info[#info]] = v; self.wFocus:FindChild("FocusProgress"):SetFont(tMyFontTable[v]) end,
+                    },
+                    focusTextStyle = {
+                      order = 50,
+                      width = "full",
+                      name = "Text style",
+                      type = "select",
+                      values = tFocusTextStyle,
+                      style = "dropdown",
+                      get = function(info) return self.db.profile[info[#info]] end,
+                      set = function(info, v) self.db.profile[info[#info]] = v end,
+                    },
+-----------------------------------------------------------------------------------------------
+-- Focus bar color options
+-----------------------------------------------------------------------------------------------
                     reactiveFocusColorsHeader = {
                         order = 100,
                         name = "Reactive coloring",
@@ -395,7 +405,7 @@ function addon:OnEnable()
     r,b,g = unpack(self.db.profile.focusBarBackgroundColor)
     self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
     self.wFocus:FindChild("FocusProgress"):SetTextColor(CColor.new(unpack(self.db.profile.focusTextColor)))
-    --self.wFocus:FindChild("FocusProgress"):SetFont(self.db.proifle.focusFont)
+    self.wFocus:FindChild("FocusProgress"):SetFont(tMyFontTable[self.db.profile.focusFont] or "CRB_Interface14_BO")
 
     self.wDisplay = Apollo.LoadForm("EsperPP.xml", "Display", nil, self)
     self.wDisplay:Show(true)
@@ -585,8 +595,8 @@ function addon:OnUpdate()
         local nCurr, nMax = uPlayer:GetMana(), uPlayer:GetMaxMana()
         bar:SetMax(nMax)
         bar:SetProgress(nCurr)
-        --bar:SetText(formatFocusText(self.db.profile.focusTextStyle), nCurr, nMax)
-        bar:SetText(math.floor(nCurr))
+        bar:SetText(formatFocusText(self.db.profile.focusTextStyle, nCurr, nMax))
+        --bar:SetText(math.floor(nCurr))
         if self.db.profile.bReactiveFocusColor then
             local r,g,b
             if ((nCurr / nMax) <= 0.25) then -- Reactive Color Change on Focus Loss
@@ -624,13 +634,7 @@ function addon:LockUnlock(bValue)
 end
 
 function addon:OpenMenu(_, input)
-  -- Assuming "MyOptions" is the appName of a valid options table
     Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
-    --if not input or input:trim() == "" then
-    --LibStub("AceConfigDialog-3.0"):Open("MyOptions")
-    --else
-    --LibStub("AceConfigCmd-3.0").HandleCommand(MyAddon, "mychat", "MyOptions", input)
-    --end
 end
 
 function addon:RepositionDisplay()
@@ -649,73 +653,7 @@ function addon:FocusMoveOrScale()
     self.db.profile.tFocusPos = { l = l, t = t, r = r, b = b}
 end
 
-function addon:OnFocusLockButton(wHandler)
-    self.wFocus:FindChild("Header"):Show(false)
-    self.wFocus:SetStyle("Moveable", false)
-    self.wFocus:SetStyle("Sizable", false)
-    self.db.profile.bFocusLocked = true
-end
-
-function addon:OnAnchorLockButton(wHandler)
-    self.wAnchor:Show(false)
-    self.db.profile.locked = true
-end
-
 function addon:HideFocus()
     self.wFocus:Show(false)
     self.db.profile.bFocusShown = false
 end
-
-function addon:OnSlashCommand(_, input)
-    self.wAnchor:Show(true)
-    self.db.profile.locked = false
-    self.db.profile.bFocusLocked = false
-    self.db.profile.bFocusShown = true
-    self.wFocus:Show(true)
-    self.wFocus:FindChild("Header"):Show(true)
-    self.wFocus:SetStyle("Moveable", true)
-    self.wFocus:SetStyle("Sizable", true)
-end
-
-
------------------------------------------------------------------------------------------------
--- Savedvariables
------------------------------------------------------------------------------------------------
-
---[[
-function addon:OnSave(eLevel)
-    if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then return end
-
-    local l,t,r,b = self.wAnchor:GetAnchorOffsets()
-    self.db.profile.tPos.anchor = { l = l, t = t, r = r, b = b}
-
-    l,t,r,b = self.wFocus:GetAnchorOffsets()
-    self.db.profile.tFocusPos = { l = l, t = t, r = r, b = b}
-    self.db.profile.bFocusShown = self.wFocus:IsShown()
-    return self.db
-end
-
-function addon:OnRestore(eLevel, tData)
-    if eLevel ~= GameLib.CodeEnumAddonSaveLevel.Character then return end
-
-    self.db = tData
-    if tData.tPos then
-        if tData.tPos.anchor then
-            self.wAnchor:SetAnchorOffsets(tData.tPos.anchor.l, tData.tPos.anchor.t, tData.tPos.anchor.r, tData.tPos.anchor.b)
-            self:RepositionDisplay()
-        end
-    end
-    self.wAnchor:Show(not tData.locked)
-
-    self.wFocus:FindChild("Header"):Show(not tData.bFocusLocked)
-    self.wFocus:SetStyle("Moveable", not tData.bFocusLocked)
-    self.wFocus:SetStyle("Sizable", not tData.bFocusLocked)
-
-    if tData.tFocusPos then
-        if tData.tFocusPos then
-            self.wFocus:SetAnchorOffsets(tData.tFocusPos.l, tData.tFocusPos.t, tData.tFocusPos.r, tData.tFocusPos.b)
-        end
-    end
-    self.wFocus:Show(tData.bFocusShown)
-end
-]]--
