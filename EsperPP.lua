@@ -12,9 +12,16 @@
         move EVERYTHING to GeminiGUI
         localization
         move options to it's own file
+
+        Psi charge:
+            need to implement offset to adjust position inside container
+            need to have some good defaults
+            need to fix hide/show toggle for the container
+
+        all the anchors containers need their own hide/show button in the options
 ]]--
 
-local sVersion = "9.1.0.74"
+local sVersion = "9.1.0.75"
 
 require "Window"
 require "GameLib"
@@ -54,6 +61,7 @@ local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", t
 -- Locals and defaults
 -----------------------------------------------------------------------------------------------
 local uPlayer = nil
+local nAnchorEdge = 3
 
 local defaults = {
     profile = {
@@ -81,6 +89,10 @@ local defaults = {
         ppColor5 = {0.78,0,0.16,1},
         ppColorOOC = {0.13,0.76,0.44,1},
         bShowCB = true,
+        bShowPsiCharge = true,
+        nPsiChargeScale = 1,
+        tPsiChargePos = {339,112,428,201},
+        nPsiCharge = 5,
     }
 }
 
@@ -381,8 +393,70 @@ function addon:OnInitialize()
                     },
                 },
             },
+            PsiCharge = {
+                order = 40,
+                name = "Psi Charge",
+                type = "group",
+                args={
+                    psiChargeHeader = {
+                        order = 1,
+                        name = "Psi charge options",
+                        type = "header",
+                    },
+                    bShowPsiCharge = {
+                        order = 5,
+                        name = "Show psi charge tracker",
+                        type = "toggle",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:TogglePsichargeTracker(v) end,
+                    },
+                    nPsiCharge = {
+                        order = 10,
+                        name = "Psi charge scale",
+                        type = "range",
+                        min = 1,
+                        max = 6,
+                        step = 0.1,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v;
+                            if self.wBuffBar then
+                                self.wBuffBar:SetScale(v)
+                            end
+                        end,
+                    },
+                },
+            },
         }
     }
+end
+
+function addon:TogglePsichargeTracker(bEnabled)
+    if bEnabled then
+        if not self.buffUpdaterTimer then
+            self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
+            self.wBuffBar:SetScale(self.db.profile.nPsiCharge)
+            self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+            self:OnMoveOrResizePsiChargeContainer()
+        end
+    else
+        if self.buffUpdaterTimer then
+            self:CancelTimer(self.buffUpdaterTimer)
+            self.buffUpdaterTimer = nil
+            self.wBuffBar:Destroy()
+        end
+    end
+end
+
+function addon:OnMoveOrResizePsiChargeContainer(wHandler, wControl)
+    if wHandler ~= wControl then return end
+    local l,t,r,b = self.wPsiChargeContainer:GetAnchorOffsets()
+    self.db.profile.tPsiChargePos = {l,t,r,b}
+
+    if self.wBuffBar then
+        self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
+    end
 end
 -----------------------------------------------------------------------------------------------
 -- OnEnable
@@ -395,6 +469,18 @@ function addon:OnEnable()
     Apollo.RegisterSlashCommand("EsperPP", "OpenMenu", self)
     Apollo.RegisterSlashCommand("esperpp", "OpenMenu", self)
     Apollo.RegisterSlashCommand("epp", "OpenMenu", self)
+
+    self.wPsiChargeContainer = Apollo.LoadForm("EsperPP.xml", "PsiChargeContainer", nil, self)
+    self.wPsiChargeContainer:SetAnchorOffsets(unpack(self.db.profile.tPsiChargePos))
+    self.wPsiChargeContainer:AddEventHandler("WindowMove", "OnMoveOrResizePsiChargeContainer", self)
+    self.wPsiChargeContainer:AddEventHandler("WindowSizeChanged", "OnMoveOrResizePsiChargeContainer", self)
+    if self.db.profile.bShowPsiCharge then
+        self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
+        self.wBuffBar:SetScale(self.db.profile.nPsiCharge)
+        self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+        local l,t,r,b = unpack(self.db.profile.tPsiChargePos)
+        self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
+    end
 
     self.wAnchor = Apollo.LoadForm("EsperPP.xml", "Anchor", nil, self)
 
@@ -533,8 +619,33 @@ function addon:FastTimer()
     self.nMyTime = self.nMyTime + 1
 end
 
+function addon:BuffBarFilterUpdater()
+    if not uPlayer then return end
+    self.wBuffBar:SetUnit(uPlayer)
+    local tBuffs = self.wBuffBar:GetChildren()
+    local bFound = false
+    if tBuffs then
+        for _, wBuff in ipairs(tBuffs) do
+            local sTooltip = wBuff:GetBuffTooltip()
+            --"Building up Psi Energy, at 6 charges, gain 1 Psi Point."
+            -- hopefully not likely to have a similarly structured tooltip for another buff
+            -- if sTooltip:match("Psi Energy") then
+            if sTooltip:match(".*,.*%d.*,.*%d.*%.") then -- to possibly work for more localization, assuming some comma usage and 2 numbers
+                wBuff:Show(true)
+                bFound = true
+
+                wBuff:SetAnchorOffsets(0,0,self.wPsiChargeContainer:GetWidth(),self.wPsiChargeContainer:GetHeight()-10)
+                self.wBuffBar:ToFront()
+            else
+                wBuff:Show(false)
+            end
+        end
+    end
+    self.wBuffBar:Show(bFound)
+end
+
 function addon:OnUpdate()
-    local uPlayer = GameLib.GetPlayerUnit()
+    uPlayer = GameLib.GetPlayerUnit() -- uPlayer is local for the file, because we use it multiple timers
     if not uPlayer then return end
     if uPlayer:GetClassId() ~= GameLib.CodeEnumClass.Esper then self.wDisplay:Show(false) self.wAnchor:Show(false) return end -- not esper
     self.wDisplay:Show(true)
@@ -552,6 +663,8 @@ function addon:OnUpdate()
 
     -- T8 builder stack tracking
     -- buff or API is bugged and does not show up among the return values
+
+
     --local tBuffs = uPlayer:GetBuffs().arBeneficial
     --if tBuffs then
     --  if
@@ -631,6 +744,7 @@ function addon:LockUnlock(bValue)
     self.wFocus:FindChild("Header"):Show(bValue)
     self.wFocus:SetStyle("Moveable", bValue)
     self.wFocus:SetStyle("Sizable", bValue)
+    self.wPsiChargeContainer:Show(bValue)
 end
 
 function addon:OpenMenu(_, input)
