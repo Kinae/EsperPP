@@ -21,7 +21,7 @@
         all the anchors containers need their own hide/show button in the options
 ]]--
 
-local sVersion = "9.1.0.75"
+local sVersion = "9.1.0.76"
 
 require "Window"
 require "GameLib"
@@ -73,6 +73,7 @@ local defaults = {
         focusFont = 73, -- CRB_Interface14_BO
         focusTextStyle = "def",
         focusTextColor = {1,1,1,1},
+        bShowFocusAnchor = true,
         nFocusOpacity = 0.7,
         bReactiveFocusColor = false,
         reactiveFocusBarColorOver75Percent = {0,0.63,0.77,1},
@@ -90,9 +91,11 @@ local defaults = {
         ppColorOOC = {0.13,0.76,0.44,1},
         bShowCB = true,
         bShowPsiCharge = true,
+        bShowPsiChargeAnchor = true,
         nPsiChargeScale = 1,
         tPsiChargePos = {339,112,428,201},
-        nPsiCharge = 5,
+        nPsiChargeBuffWindowOffset = 0,
+        nPsiChargeOpacity = 0.7,
     }
 }
 
@@ -147,7 +150,7 @@ function addon:OnInitialize()
                 type = "toggle",
                 width = "full",
                 get = function(info) return self.db.profile[info[#info]] end,
-                set = function(info, v) self.db.profile[info[#info]] = v; addon:LockUnlock(v) end,
+                set = function(info, v) self.db.profile[info[#info]] = v; self:LockUnlock(v) end,
             },
             focusBar = {
                 order = 10,
@@ -161,6 +164,22 @@ function addon:OnInitialize()
                         order = 1,
                         name = "Focus bar settings",
                         type = "header",
+                    },
+                    bShowFocusAnchor = {
+                        order = 2,
+                        name = "Lock/Unlock focus bar",
+                        type = "toggle",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:LockUnlockFocusAnchor(v) end,
+                    },
+                    bFocusShown = {
+                        order = 3,
+                        name = "Hide/Show focus bar",
+                        type = "toggle",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self.wFocus:Show(v) end,
                     },
                     nFocusOpacity = {
                         order = 5,
@@ -403,6 +422,14 @@ function addon:OnInitialize()
                         name = "Psi charge options",
                         type = "header",
                     },
+                    bShowPsiChargeAnchor = {
+                        order = 2,
+                        name = "Show psi charge anchor",
+                        type = "toggle",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:HideShowPsiChargeContainer(v) end,
+                    },
                     bShowPsiCharge = {
                         order = 5,
                         name = "Show psi charge tracker",
@@ -411,7 +438,7 @@ function addon:OnInitialize()
                         get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v; self:TogglePsichargeTracker(v) end,
                     },
-                    nPsiCharge = {
+                    nPsiChargeScale = {
                         order = 10,
                         name = "Psi charge scale",
                         type = "range",
@@ -426,38 +453,38 @@ function addon:OnInitialize()
                             end
                         end,
                     },
+                    nPsiChargeBuffWindowOffset = {
+                        order = 15,
+                        name = "Psi charge buff window offset",
+                        type = "range",
+                        min = -50,
+                        max = 50,
+                        step = 1,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v end,
+                    },
+                    nPsiChargeOpacity = {
+                        order = 20,
+                        name = "Psi charge opacity",
+                        type = "range",
+                        min = 0,
+                        max = 1,
+                        step = 0.01,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v;
+                            if self.wBuffBar then
+                                self.wBuffBar:SetOpacity(v)
+                            end
+                        end,
+                    },
                 },
             },
         }
     }
 end
 
-function addon:TogglePsichargeTracker(bEnabled)
-    if bEnabled then
-        if not self.buffUpdaterTimer then
-            self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
-            self.wBuffBar:SetScale(self.db.profile.nPsiCharge)
-            self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
-            self:OnMoveOrResizePsiChargeContainer()
-        end
-    else
-        if self.buffUpdaterTimer then
-            self:CancelTimer(self.buffUpdaterTimer)
-            self.buffUpdaterTimer = nil
-            self.wBuffBar:Destroy()
-        end
-    end
-end
-
-function addon:OnMoveOrResizePsiChargeContainer(wHandler, wControl)
-    if wHandler ~= wControl then return end
-    local l,t,r,b = self.wPsiChargeContainer:GetAnchorOffsets()
-    self.db.profile.tPsiChargePos = {l,t,r,b}
-
-    if self.wBuffBar then
-        self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
-    end
-end
 -----------------------------------------------------------------------------------------------
 -- OnEnable
 -----------------------------------------------------------------------------------------------
@@ -470,19 +497,20 @@ function addon:OnEnable()
     Apollo.RegisterSlashCommand("esperpp", "OpenMenu", self)
     Apollo.RegisterSlashCommand("epp", "OpenMenu", self)
 
+    -- create anchors and windows and load database values
     self.wPsiChargeContainer = Apollo.LoadForm("EsperPP.xml", "PsiChargeContainer", nil, self)
     self.wPsiChargeContainer:SetAnchorOffsets(unpack(self.db.profile.tPsiChargePos))
+    self:HideShowPsiChargeContainer(self.db.profile.bShowPsiChargeAnchor)
     self.wPsiChargeContainer:AddEventHandler("WindowMove", "OnMoveOrResizePsiChargeContainer", self)
     self.wPsiChargeContainer:AddEventHandler("WindowSizeChanged", "OnMoveOrResizePsiChargeContainer", self)
     if self.db.profile.bShowPsiCharge then
         self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
-        self.wBuffBar:SetScale(self.db.profile.nPsiCharge)
+        self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
         self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
         local l,t,r,b = unpack(self.db.profile.tPsiChargePos)
         self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
+        self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
     end
-
-    self.wAnchor = Apollo.LoadForm("EsperPP.xml", "Anchor", nil, self)
 
     self.wFocus = Apollo.LoadForm("EsperPP.xml", "Focus", nil, self)
     self.wFocus:Show(true)
@@ -493,6 +521,7 @@ function addon:OnEnable()
     self.wFocus:FindChild("FocusProgress"):SetTextColor(CColor.new(unpack(self.db.profile.focusTextColor)))
     self.wFocus:FindChild("FocusProgress"):SetFont(tMyFontTable[self.db.profile.focusFont] or "CRB_Interface14_BO")
 
+    self.wAnchor = Apollo.LoadForm("EsperPP.xml", "Anchor", nil, self)
     self.wDisplay = Apollo.LoadForm("EsperPP.xml", "Display", nil, self)
     self.wDisplay:Show(true)
 
@@ -510,28 +539,26 @@ function addon:OnEnable()
     self.abilityBookTimer = self:ScheduleRepeatingTimer("DelayedAbilityBookCheck", 1)
 
     if self.db.profile.tPos then
-        if self.db.profile.tPos.anchor then
-            self.wAnchor:SetAnchorOffsets(self.db.profile.tPos.anchor.l, self.db.profile.tPos.anchor.t, self.db.profile.tPos.anchor.r, self.db.profile.tPos.anchor.b)
+        if self.db.profile.tPos.anchor and #self.db.profile.tPos.anchor > 0 then
+            self.wAnchor:SetAnchorOffsets(unpack(self.db.profile.tPos.anchor))
             self:RepositionDisplay()
         end
     end
     self.wAnchor:Show(self.db.profile.locked)
 
-    self.wFocus:FindChild("Header"):Show(not self.db.profile.bFocusLocked)
-    self.wFocus:SetStyle("Moveable", not self.db.profile.bFocusLocked)
-    self.wFocus:SetStyle("Sizable", not self.db.profile.bFocusLocked)
+    self.wFocus:FindChild("Header"):Show(self.db.profile.bShowFocusAnchor)
+    self.wFocus:SetStyle("Moveable", self.db.profile.bShowFocusAnchor)
+    self.wFocus:SetStyle("Sizable", self.db.profile.bShowFocusAnchor)
 
-    if self.db.profile.tFocusPos then
-        if self.db.profile.tFocusPos then
-            self.wFocus:SetAnchorOffsets(self.db.profile.tFocusPos.l, self.db.profile.tFocusPos.t, self.db.profile.tFocusPos.r, self.db.profile.tFocusPos.b)
-        end
+    if self.db.profile.tFocusPos and #self.db.profile.tFocusPos > 0 then
+        self.wFocus:SetAnchorOffsets(unpack(self.db.profile.tFocusPos))
     end
     self.wFocus:Show(self.db.profile.bFocusShown)
 
 
 
 
-    --Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
@@ -634,7 +661,7 @@ function addon:BuffBarFilterUpdater()
                 wBuff:Show(true)
                 bFound = true
 
-                wBuff:SetAnchorOffsets(0,0,self.wPsiChargeContainer:GetWidth(),self.wPsiChargeContainer:GetHeight()-10)
+                wBuff:SetAnchorOffsets(0,0,self.wPsiChargeContainer:GetWidth()+self.db.profile.nPsiChargeBuffWindowOffset,self.wPsiChargeContainer:GetHeight())
                 self.wBuffBar:ToFront()
             else
                 wBuff:Show(false)
@@ -736,15 +763,12 @@ end
 
 function addon:LockUnlock(bValue)
     self.wAnchor:Show(bValue)
-    self.db.profile.bFocusLocked = not bValue
-    if bValue then
-        self.wFocus:Show(true)
-    end
-    self.db.profile.bFocusShown = self.wFocus:IsShown()
-    self.wFocus:FindChild("Header"):Show(bValue)
-    self.wFocus:SetStyle("Moveable", bValue)
-    self.wFocus:SetStyle("Sizable", bValue)
-    self.wPsiChargeContainer:Show(bValue)
+
+    self.db.profile.bShowPsiChargeAnchor = bValue
+    self:HideShowPsiChargeContainer(bValue)
+
+    self.db.profile.bShowFocusAnchor = bValue
+    self:LockUnlockFocusAnchor(bValue)
 end
 
 function addon:OpenMenu(_, input)
@@ -758,16 +782,63 @@ end
 
 function addon:OnAnchorMove(wHandler)
     local l,t,r,b = self.wAnchor:GetAnchorOffsets()
-    self.db.profile.tPos.anchor = { l = l, t = t, r = r, b = b}
+    self.db.profile.tPos.anchor = {l,t,r,b}
     self:RepositionDisplay()
 end
 
 function addon:FocusMoveOrScale()
     local l,t,r,b = self.wFocus:GetAnchorOffsets()
-    self.db.profile.tFocusPos = { l = l, t = t, r = r, b = b}
+    self.db.profile.tFocusPos = {l,t,r,b}
+end
+
+function addon:LockUnlockFocusAnchor(bValue)
+    if bValue then
+        self.wFocus:Show(true)
+    end
+    self.db.profile.bFocusShown = self.wFocus:IsShown()
+
+    self.wFocus:FindChild("Header"):Show(bValue)
+    self.wFocus:SetStyle("Moveable", bValue)
+    self.wFocus:SetStyle("Sizable", bValue)
 end
 
 function addon:HideFocus()
     self.wFocus:Show(false)
     self.db.profile.bFocusShown = false
+end
+
+function addon:TogglePsichargeTracker(bEnabled)
+    if bEnabled then
+        if not self.buffUpdaterTimer then
+            self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
+            self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+            self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+            self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+            self:OnMoveOrResizePsiChargeContainer()
+        end
+    else
+        if self.buffUpdaterTimer then
+            self:CancelTimer(self.buffUpdaterTimer)
+            self.buffUpdaterTimer = nil
+            self.wBuffBar:Destroy()
+        end
+    end
+end
+
+function addon:OnMoveOrResizePsiChargeContainer(wHandler, wControl)
+    if wHandler ~= wControl then return end
+    local l,t,r,b = self.wPsiChargeContainer:GetAnchorOffsets()
+    self.db.profile.tPsiChargePos = {l,t,r,b}
+
+    if self.wBuffBar then
+        self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
+    end
+end
+
+function addon:HideShowPsiChargeContainer(bValue)
+    self.wPsiChargeContainer:SetText(bValue and "PC" or "")
+    self.wPsiChargeContainer:SetStyle("Picture", bValue)
+    self.wPsiChargeContainer:SetStyle("Moveable", bValue)
+    self.wPsiChargeContainer:SetStyle("Sizable", bValue)
+    self.wPsiChargeContainer:SetStyle("IgnoreMouse", not bValue)
 end
