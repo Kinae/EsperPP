@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.77"
+local sVersion = "9.1.0.78"
 
 require "Window"
 require "GameLib"
@@ -428,13 +428,28 @@ function addon:OnInitialize()
                 name = "Psi Charge",
                 type = "group",
                 args={
-                    psiChargeHeader = {
+                    psiChargeDescriptionHeader = {
                         order = 1,
+                        name = "Psi charge READ ME!",
+                        type = "header",
+                    },
+                    psiChargeDescription = {
+                        order = 2,
+                        name = [[Psi Charge tracking finally available! Sadly I had to do all kinds of workarounds to get it somewhat usable and the result is not pretty, but at least functional. Till Carbine fixes the API I don't think it is going to get any better than this.
+ 
+On to the caveats: I think the default settings are pretty good and you probably just want to reposition the display, but I included some options to try and make it more customizable. Basically there is no way to get the stacks number directly, so the best you can do is to scale up the buff icon and only show that scaled up ugly number in the top left corner of a container window and then move it to the right a bit with some offset values. You could try and set the scale to 1 and have no offsets, but then I think the stack number (the number you care about) will be very small.
+ 
+If you messed with the settings but could not quite get it the way you wanted, there is a reset button on the bottom of this configuration window. You can use that to set the psi charger tracker back to it's default settings.
+                        ]],
+                        type = "description",
+                    },
+                    psiChargeOptionsHeader = {
+                        order = 3,
                         name = "Psi charge options",
                         type = "header",
                     },
                     bShowPsiChargeAnchor = {
-                        order = 2,
+                        order = 4,
                         name = "Show psi charge anchor",
                         type = "toggle",
                         width = "full",
