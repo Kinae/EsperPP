@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.78"
+local sVersion = "9.1.0.79"
 
 require "Window"
 require "GameLib"
@@ -139,6 +139,8 @@ function addon:OnInitialize()
             locked = {
                 order = 1,
                 name = "Lock/Unlock all anchors",
+                desc = "Use this button to Lock/Unlock all the ancors. When toggled to unlock, it'll also reveal all hidden windows such as the focus bar.",
+                descStyle = "tooltip",
                 type = "toggle",
                 width = "full",
                 get = function(info) return self.db.profile[info[#info]] end,
@@ -609,7 +611,7 @@ function addon:OnEnable()
 
 
 
-    Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    --Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
