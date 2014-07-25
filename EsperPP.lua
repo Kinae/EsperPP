@@ -7,21 +7,13 @@
     TODO:
         play sound when reahing 5 pp
         more CB customization
-        font customization
-        psi charge tracking through buff window container
         move EVERYTHING to GeminiGUI
         localization
         move options to it's own file
 
-        Psi charge:
-            need to implement offset to adjust position inside container
-            need to have some good defaults
-            need to fix hide/show toggle for the container
-
-        all the anchors containers need their own hide/show button in the options
 ]]--
 
-local sVersion = "9.1.0.76"
+local sVersion = "9.1.0.77"
 
 require "Window"
 require "GameLib"
@@ -92,9 +84,9 @@ local defaults = {
         bShowCB = true,
         bShowPsiCharge = true,
         bShowPsiChargeAnchor = true,
-        nPsiChargeScale = 1,
-        tPsiChargePos = {339,112,428,201},
-        nPsiChargeBuffWindowOffset = 0,
+        nPsiChargeScale = 3.5,
+        tPsiChargePos = {825,492,871,538},
+        nPsiChargeBuffWindowOffset = 11,
         nPsiChargeOpacity = 0.7,
     }
 }
@@ -213,9 +205,7 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity)) end,
                     },
------------------------------------------------------------------------------------------------
--- Focus font and text options
------------------------------------------------------------------------------------------------
+                    -- Focus font and text options
                     focusTextColor = {
                         order = 25,
                         name = "Text color",
@@ -244,9 +234,7 @@ function addon:OnInitialize()
                       get = function(info) return self.db.profile[info[#info]] end,
                       set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
------------------------------------------------------------------------------------------------
--- Focus bar color options
------------------------------------------------------------------------------------------------
+                    -- Focus bar color options
                     reactiveFocusColorsHeader = {
                         order = 100,
                         name = "Reactive coloring",
@@ -299,13 +287,30 @@ function addon:OnInitialize()
                     },
                 }
             },
+-----------------------------------------------------------------------------------------------
+-- Psi Point options
+-----------------------------------------------------------------------------------------------
             psiPoints = {
                 order = 20,
                 name = "Psi points",
                 type = "group",
                 args={
-                    bShow0pp = {
+                    psiPointHeader = {
                         order = 1,
+                        name = "Psi point options",
+                        type = "header",
+                    },
+                    bShowPPAnchor = {
+                        order = 2,
+                        name = "Show psi point anchor",
+                        desc = "Show the psi point anchor.",
+                        type = "toggle",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v;  self.wAnchor:Show(v) end,
+                    },
+                    bShow0pp = {
+                        order = 4,
                         name = "Show 0 psi point",
                         desc = "Show 0 psi point too.",
                         type = "toggle",
@@ -314,7 +319,7 @@ function addon:OnInitialize()
                         set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     bShowFullEffect = {
-                        order = 1,
+                        order = 5,
                         name = "Show full effect",
                         desc = "Show extra effect when you have the maximum possible psi points.",
                         type = "toggle",
@@ -323,13 +328,13 @@ function addon:OnInitialize()
                         set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     psiPointColoringHeader = {
-                        order = 4,
+                        order = 8,
                         name = "Psi point coloring",
                         type = "header",
                     },
                     ppColor0 = {
                         width = "full",
-                        order = 5,
+                        order = 9,
                         name = "Color for 0 psi point",
                         type = "color",
                         hasAlpha = true,
@@ -392,6 +397,9 @@ function addon:OnInitialize()
                     },
                 },
             },
+-----------------------------------------------------------------------------------------------
+-- Concentrated Blade options
+-----------------------------------------------------------------------------------------------
             CB = {
                 order = 30,
                 name = "Concentrated Blade",
@@ -412,6 +420,9 @@ function addon:OnInitialize()
                     },
                 },
             },
+-----------------------------------------------------------------------------------------------
+-- Psi Charge options
+-----------------------------------------------------------------------------------------------
             PsiCharge = {
                 order = 40,
                 name = "Psi Charge",
@@ -476,6 +487,31 @@ function addon:OnInitialize()
                         set = function(info, v) self.db.profile[info[#info]] = v;
                             if self.wBuffBar then
                                 self.wBuffBar:SetOpacity(v)
+                            end
+                        end,
+                    },
+                    restHeader = {
+                        order = 100,
+                        name = "Reset psi charge options",
+                        type = "header",
+                    },
+                    restToDefaults = {
+                        order = 101,
+                        name = "Reset",
+                        type = "execute",
+                        width = "full",
+                        func = function()
+                            self.db.profile.bShowPsiChargeAnchor = true
+                            local l,t,r,b = unpack(defaults.profile.tPsiChargePos)
+                            self.db.profile.tPsiChargePos = {l,t,r,b}
+                            self.wPsiChargeContainer:SetAnchorOffsets(unpack(defaults.profile.tPsiChargePos))
+                            self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeScale
+                            self.db.profile.nPsiChargeBuffWindowOffset = defaults.profile.nPsiChargeBuffWindowOffset
+                            self.db.profile.nPsiChargeOpacity = defaults.profile.nPsiChargeOpacity
+                            self:HideShowPsiChargeContainer(true)
+                            if self.wBuffBar then
+                                self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+                                self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
                             end
                         end,
                     },
@@ -544,7 +580,7 @@ function addon:OnEnable()
             self:RepositionDisplay()
         end
     end
-    self.wAnchor:Show(self.db.profile.locked)
+    self.wAnchor:Show(self.db.profile.bShowPPAnchor)
 
     self.wFocus:FindChild("Header"):Show(self.db.profile.bShowFocusAnchor)
     self.wFocus:SetStyle("Moveable", self.db.profile.bShowFocusAnchor)
@@ -762,6 +798,7 @@ end
 -----------------------------------------------------------------------------------------------
 
 function addon:LockUnlock(bValue)
+    self.db.profile.bShowPPAnchor = bValue
     self.wAnchor:Show(bValue)
 
     self.db.profile.bShowPsiChargeAnchor = bValue
