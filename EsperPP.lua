@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.85"
+local sVersion = "9.1.0.86"
 
 require "Window"
 require "GameLib"
@@ -131,7 +131,7 @@ end
 -- Initialization
 -----------------------------------------------------------------------------------------------
 function addon:OnInitialize()
-    self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, defaults)
+    self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, defaults, true)
 
     self.myOptionsTable = {
         type = "group",
