@@ -5,7 +5,7 @@ Very basic Esper resource tracker. Or, well, not so basic anymore ...
 Since I didn't like the default UI's Psi Point tracker for Espers I have created my own. It was not really meant for public use since it is just set up how I like it and there is very little customization options for the addon, but I've got a couple of request to share it, so here it goes for the folk who might want to use it.
 
 ####Update:
-From version 8.1.0.1 there are some customization options
+From version 9.1.0.1 there are some customization options
 
 ##Goal:
 Provide a cleaner Psi Point tracking interface and some additional aid for Espers.
@@ -21,6 +21,7 @@ Espers.
 * Concentrated blade timer can be hidden.
 * Movable / sizable focus bar for the healers. You can also just hide it if you are a DPS.
 * Focus bar is colorable additionally there is a reactive option that allows you to set the background color of the focus bar based on how much percentage of focus you have left.
+* Psi Charge tracking: This is pretty ugly till Carbine fixes the API, please make sure you read the description in the options before widdling with the settings.
 
 ##Configuration window slash command:
 > /epp
@@ -29,7 +30,7 @@ Espers.
 
 ##Planned features:
 * Additional customization based on requests.
-* Add tracking for "Psi Charge" buff that you get when you use either tier 8 Telekinetic Strike or Psychic Frenzy. Right now you can't track it because the API does not return this buff in any of the tables. Bug reported: https://forums.wildstar-online.com/forums/index.php?/topic/38160-buff-api-bug-with-psi-charge/ waiting for Carbine to fix it.
+* Add a more elegant way of tracking for "Psi Charge" buff that you get when you use either tier 8 Telekinetic Strike or Psychic Frenzy. Right now you can't track it because the API does not return this buff in any of the tables. Bug reported: https://forums.wildstar-online.com/forums/index.php?/topic/38160-buff-api-bug-with-psi-charge/ waiting for Carbine to fix it.
 
 ##How to install:
 Extract the EsperPP.zip file into the Wildstar Addon folder ( which can be found at %APPDATA%\Roaming\NCSOFT\WildStar\Addons by default, if you can't find the Addons folder, then create it! )
