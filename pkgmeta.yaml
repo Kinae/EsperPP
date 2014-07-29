@@ -1,10 +1,10 @@
 package-as: EsperPP
 
 externals:
-    Libs/GeminiAddon/GeminiAddon: https://github.com/wildstarnasa/GeminiAddon.git
-    Libs/GeminiColor/GeminiColor: https://github.com/wildstarnasa/GeminiColor.git
-    Libs/GeminiDB/GeminiDB: https://github.com/wildstarnasa/GeminiDB.git
-    Libs/GeminiGUI/GeminiGUI: https://github.com/wildstarnasa/GeminiGUI.git
-    Libs/GeminiLocale/GeminiLocale: https://github.com/wildstarnasa/GeminiLocale.git
-    Libs/GeminiTimer/GeminiTimer: https://github.com/wildstarnasa/GeminiTimer.git
-    Libs/GeminiConfig/GeminiConfig: https://github.com/wildstarnasa/GeminiConfig.git
+    Libs/GeminiAddon: https://github.com/wildstarnasa/GeminiAddon.git
+    Libs/GeminiColor: https://github.com/wildstarnasa/GeminiColor.git
+    Libs/GeminiDB: https://github.com/wildstarnasa/GeminiDB.git
+    Libs/GeminiGUI: https://github.com/wildstarnasa/GeminiGUI.git
+    Libs/GeminiLocale: https://github.com/wildstarnasa/GeminiLocale.git
+    Libs/GeminiTimer: https://github.com/wildstarnasa/GeminiTimer.git
+    Libs/GeminiConfig: https://github.com/wildstarnasa/GeminiConfig.git
