@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.87"
+local sVersion = "9.1.0.88"
 
 require "Window"
 require "GameLib"
@@ -826,51 +826,51 @@ function addon:OnUpdate()
 
 
 
-    -- local tFacing = uPlayer:GetFacing()
-    -- if not tFacing then return end
+    local tFacing = uPlayer:GetFacing()
+    if not tFacing then return end
 
-    -- local tPos = uPlayer:GetPosition()
-    -- if not tPos then return end
+    local tPos = uPlayer:GetPosition()
+    if not tPos then return end
 
-    -- local rot = math.atan2(tFacing.x, tFacing.z)
+    local rot = math.atan2(tFacing.x, tFacing.z)
 
-    -- local rotPlus = rot+math.rad(self.nMBDegree) -- offset
-    -- local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
+    local rotPlus = rot+math.rad(self.nMBDegree) -- offset
+    local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
 
-    -- for nCounter = 1, 3 do -- 3 safe areas per mob
-    --     for i = 1, #self.tMarkers[nCounter] do
-    --         if (nCounter%3) == 1 then
-    --             local nOffset, nOffsetDegree = 1, 180
-    --             local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-    --             local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-    --             local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-    --             local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-    --             local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nCounter]) * (i-1))
-    --             self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
-    --             self.tMarkers[nCounter][i]:Show(true)
-    --         elseif (nCounter%3) == 2 then
-    --             local nOffset, nOffsetDegree = 1, 180
-    --             local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-    --             local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-    --             local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-    --             local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-    --             local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nCounter]) * (i-1))
-    --             self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
-    --             self.tMarkers[nCounter][i]:Show(true)
-    --         elseif (nCounter%3) == 0 then
-    --             local nOffset, nOffsetDegree = 1, 180
-    --             local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-    --             local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-    --             local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-    --             local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-    --             local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
-    --             local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
-    --             local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nCounter]-1)) * (i-1))
-    --             self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
-    --             self.tMarkers[nCounter][i]:Show(true)
-    --         end
-    --     end
-    -- end
+    for nCounter = 1, 3 do -- 3 safe areas per mob
+        for i = 1, #self.tMarkers[nCounter] do
+            if (nCounter%3) == 1 then
+                local nOffset, nOffsetDegree = 1, 180
+                local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nCounter]) * (i-1))
+                self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
+                self.tMarkers[nCounter][i]:Show(true)
+            elseif (nCounter%3) == 2 then
+                local nOffset, nOffsetDegree = 1, 180
+                local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nCounter]) * (i-1))
+                self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
+                self.tMarkers[nCounter][i]:Show(true)
+            elseif (nCounter%3) == 0 then
+                local nOffset, nOffsetDegree = 1, 180
+                local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
+                local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
+                local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nCounter]-1)) * (i-1))
+                self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
+                self.tMarkers[nCounter][i]:Show(true)
+            end
+        end
+    end
 end
 
 -----------------------------------------------------------------------------------------------
