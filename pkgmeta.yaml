@@ -1,4 +1,4 @@
-package-as: EsperPP
+package-as: EsperPP-@project-version@
 
 externals:
     Libs/GeminiAddon: https://github.com/wildstarnasa/GeminiAddon.git
