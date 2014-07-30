@@ -1,8 +1,10 @@
 EsperPP
 =======
-Very basic Esper resource tracker. Or, well, not so basic anymore ...
+Very basic Esper resource tracker. Or, well, not so basic anymore ... nor does it only track resources ...
 
 Since I didn't like the default UI's Psi Point tracker for Espers I have created my own. It was not really meant for public use since it is just set up how I like it and there is very little customization options for the addon, but I've got a couple of request to share it, so here it goes for the folk who might want to use it.
+
+Some time have passed and now there are customization and a ton of new features (list below).
 
 ####Update:
 From version 9.1.0.1 there are some customization options
@@ -22,6 +24,8 @@ Espers.
 * Movable / sizable focus bar for the healers. You can also just hide it if you are a DPS.
 * Focus bar is colorable additionally there is a reactive option that allows you to set the background color of the focus bar based on how much percentage of focus you have left.
 * Psi Charge tracking: This is pretty ugly till Carbine fixes the API, please make sure you read the description in the options before widdling with the settings.
+* Telegraph assist: show where the telegraph would be for the corresponding spell if it was cast on a flat surface. Currently supported spells:
+	* Mind Burst
 
 ##Configuration window slash command:
 > /epp
