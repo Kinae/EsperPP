@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.93"
+local sVersion = "9.1.0.94"
 
 require "Window"
 require "GameLib"
@@ -38,6 +38,7 @@ local Print = Print
 local unpack = unpack
 local math = math
 local Vector3 = Vector3
+local os = os
 
 -----------------------------------------------------------------------------------------------
 -- Package loading
@@ -703,8 +704,13 @@ function addon:OnEnable()
     self.tCBChargeData = nil
     self.tCBTracker = {}
 
-    self.nMyTime = 1
-    self.fastTimer = self:ScheduleRepeatingTimer("FastTimer", 0.1)
+    -- Gemini timers can't be faster than 0.1 so we use apollo timers, for stuff that needs to be done fast but not quite as NextFrame fast
+    self.nMyTime = os.clock()
+    Apollo.CreateTimer("FastTimer", 0.033)
+    Apollo.RegisterTimerHandler("FastTimer", "FastTimer", self)
+
+    -- For stuff like focus that does not really need very fast update
+    self.fastTimer = self:ScheduleRepeatingTimer("NotSoFastTimer", 0.2)
 
     self.abilityBookTimer = self:ScheduleRepeatingTimer("DelayedAbilityBookCheck", 1)
 
@@ -848,7 +854,66 @@ end
 -----------------------------------------------------------------------------------------------
 
 function addon:FastTimer()
-    self.nMyTime = self.nMyTime + 1
+    if not uPlayer then return end
+    self.nMyTime = os.clock()
+    -- CB tracking
+    if self.db.profile.bShowCB and self.splCB and self.tCBChargeData and self.nMyTime then -- this also works as a check if CB is even on the LAS because if it is not then this is nil
+        -- clean up the tracking data before adding a new entry
+        if self.tCBTracker[1] and self.nMyTime > self.tCBTracker[1].nEndTime then table.remove(self.tCBTracker, 1) end
+        if self.tCBTracker[2] and self.nMyTime > self.tCBTracker[2].nEndTime then table.remove(self.tCBTracker, 2) end
+        if self.tCBTracker[3] and self.nMyTime > self.tCBTracker[3].nEndTime then table.remove(self.tCBTracker, 3) end
+
+        local tChargeData = self.splCB:GetAbilityCharges()
+        if tChargeData.nChargesRemaining < self.tCBChargeData.nChargesRemaining then
+            local tTrackingData = {}
+            tTrackingData.nStartTime = self.nMyTime
+            -- tier 4 or higher so it hits after 3.4 sec not 4.4
+            tTrackingData.nEndTime = (self.splCB:GetId() > 52023) and self.nMyTime+3.4 or self.nMyTime+4.4
+
+            self.tCBTracker[#self.tCBTracker+1] = tTrackingData
+        end
+        self.tCBChargeData = tChargeData
+
+        for i=1, 3 do
+            local bar = self.wDisplay:FindChild(("ProgressBar%d"):format(i))
+            if self.tCBTracker[i] then
+                bar:Show(true)
+                bar:SetMax(self.tCBTracker[i].nEndTime-self.tCBTracker[i].nStartTime)
+                bar:SetProgress(self.nMyTime-self.tCBTracker[i].nStartTime)
+            else
+                bar:Show(false)
+            end
+        end
+    end
+end
+
+function addon:NotSoFastTimer()
+    if not uPlayer then return end
+    -- Focus display
+    if self.wFocus and self.wFocus:IsShown() then
+        local bar = self.wFocus:FindChild("FocusProgress")
+        local nCurr, nMax = uPlayer:GetMana(), uPlayer:GetMaxMana()
+        bar:SetMax(nMax)
+        bar:SetProgress(nCurr)
+        bar:SetText(formatFocusText(self.db.profile.focusTextStyle, nCurr, nMax))
+        --bar:SetText(math.floor(nCurr))
+        if self.db.profile.bReactiveFocusColor then
+            local r,g,b
+            if ((nCurr / nMax) <= 0.25) then -- Reactive Color Change on Focus Loss
+                r,g,b = unpack(self.db.profile.reactiveFocusBarColorBelow25Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+            elseif ((nCurr / nMax) <= 0.50) then
+                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver25Below50Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+            elseif ((nCurr / nMax) <= 0.75) then
+                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver50Below75Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+            else
+                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver75Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+            end
+        end
+    end
 end
 
 function addon:BuffBarFilterUpdater()
@@ -880,13 +945,13 @@ function addon:OnUpdate()
     uPlayer = GameLib.GetPlayerUnit() -- uPlayer is local for the file, because we use it multiple timers
     if not uPlayer then return end
     if uPlayer:GetClassId() ~= GameLib.CodeEnumClass.Esper then self.wDisplay:Show(false) self.wAnchor:Show(false) return end -- not esper
-    self.wDisplay:Show(true)
-    local nPP = uPlayer:GetResource(1)
-    self.wDisplay:FindChild("Text"):SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
-    self.wDisplay:GetName()
-    self.wDisplay:FindChild("Full"):Show((self.db.profile.bShowFullEffect and nPP == uPlayer:GetMaxResource(1)) and true or false)
 
     -- PP tracking
+     self.wDisplay:Show(true)
+    local nPP = uPlayer:GetResource(1)
+    self.wDisplay:FindChild("Text"):SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
+    self.wDisplay:FindChild("Full"):Show((self.db.profile.bShowFullEffect and nPP == uPlayer:GetMaxResource(1)) and true or false)
+
     if uPlayer:IsInCombat() then
         self.wDisplay:FindChild("Text"):SetTextColor(CColor.new(unpack(self.db.profile["ppColor"..nPP])))
     else
@@ -896,7 +961,6 @@ function addon:OnUpdate()
     -- T8 builder stack tracking
     -- buff or API is bugged and does not show up among the return values
 
-
     --local tBuffs = uPlayer:GetBuffs().arBeneficial
     --if tBuffs then
     --  if
@@ -905,60 +969,6 @@ function addon:OnUpdate()
     --else
     --  self.wDisplay:FindChild("T8stack"):Show(false)
     --end
-    -- CB tracking
-    if self.db.profile.bShowCB and self.splCB and self.tCBChargeData and self.nMyTime then -- this also works as a check if CB is even on the LAS because if it is not then this is nil
-        -- clean up the tracking data before adding a new entry
-        if self.tCBTracker[1] and self.nMyTime > self.tCBTracker[1].nEndTime then table.remove(self.tCBTracker, 1) end
-        if self.tCBTracker[2] and self.nMyTime > self.tCBTracker[2].nEndTime then table.remove(self.tCBTracker, 2) end
-        if self.tCBTracker[3] and self.nMyTime > self.tCBTracker[3].nEndTime then table.remove(self.tCBTracker, 3) end
-
-        local tChargeData = self.splCB:GetAbilityCharges()
-        if tChargeData.nChargesRemaining < self.tCBChargeData.nChargesRemaining then
-            local tTrackingData = {}
-            tTrackingData.nStartTime = self.nMyTime
-            -- tier 4 or higher so it hits after 3.4 sec not 4.4
-            tTrackingData.nEndTime = (self.splCB:GetId() > 52023) and self.nMyTime+3.4*10 or self.nMyTime+4.4*10
-
-            self.tCBTracker[#self.tCBTracker+1] = tTrackingData
-        end
-        self.tCBChargeData = tChargeData
-
-        for i=1, 3 do
-            local bar = self.wDisplay:FindChild(("ProgressBar%d"):format(i))
-            if self.tCBTracker[i] then
-                bar:Show(true)
-                bar:SetMax(self.tCBTracker[i].nEndTime-self.tCBTracker[i].nStartTime)
-                bar:SetProgress(self.nMyTime-self.tCBTracker[i].nStartTime)
-            else
-                bar:Show(false)
-            end
-        end
-    end
-
-    if self.wFocus and self.wFocus:IsShown() then
-        local bar = self.wFocus:FindChild("FocusProgress")
-        local nCurr, nMax = uPlayer:GetMana(), uPlayer:GetMaxMana()
-        bar:SetMax(nMax)
-        bar:SetProgress(nCurr)
-        bar:SetText(formatFocusText(self.db.profile.focusTextStyle, nCurr, nMax))
-        --bar:SetText(math.floor(nCurr))
-        if self.db.profile.bReactiveFocusColor then
-            local r,g,b
-            if ((nCurr / nMax) <= 0.25) then -- Reactive Color Change on Focus Loss
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorBelow25Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
-            elseif ((nCurr / nMax) <= 0.50) then
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver25Below50Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
-            elseif ((nCurr / nMax) <= 0.75) then
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver50Below75Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
-            else
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver75Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
-            end
-        end
-    end
 
     if self.bMBonLAS and self.db.profile.bShowMBAssist and self.tMarkers[nMBAbilityId] and #self.tMarkers[nMBAbilityId] > 1 then
         local tFacing, tPos = uPlayer:GetFacing(), uPlayer:GetPosition()
