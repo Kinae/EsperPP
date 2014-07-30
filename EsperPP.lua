@@ -5,7 +5,8 @@
 
 --[[
     TODO:
-        play sound when reahing 5 pp
+        play sound when reaching 5 pp
+            have an option to adjust sound levels while sound is playing
         more CB customization
         move EVERYTHING to GeminiGUI
         localization
@@ -13,13 +14,14 @@
 
 ]]--
 
-local sVersion = "9.1.0.95"
+local sVersion = "9.1.0.96"
 
 require "Window"
 require "GameLib"
 require "CColor"
 require "ActionSetLib"
 require "AbilityBook"
+require "Sound"
 
 -----------------------------------------------------------------------------------------------
 -- Upvalues
@@ -32,6 +34,7 @@ local table = table
 local GameLib = GameLib
 local Apollo = Apollo
 local CColor = CColor
+local Sound = Sound
 local ActionSetLib = ActionSetLib
 local AbilityBook = AbilityBook
 local Print = Print
@@ -398,13 +401,51 @@ function addon:OnInitialize()
                     },
                     ppColorOOC = {
                         width = "full",
-                        order = 50,
+                        order = 60,
                         name = "Color for psi points while out of combat",
                         type = "color",
                         hasAlpha = true,
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
                     },
+--                     psiPointSoundHeader = {
+--                         order = 70,
+--                         name = "Psi point sound options",
+--                         type = "header",
+--                     },
+--                     psiPointSoundSelector = {
+--                         order = 6,
+--                         name = "Psi point sound selector",
+--                         type = "range",
+--                         min = 1,
+--                         max = 300,
+--                         step = 1,
+--                         width = "full",
+--                         get = function(info) return self.db.profile[info[#info]] end,
+--                         set = function(info, v) self.db.profile[info[#info]] = v end,
+--                     },
+-- --[[
+-- 96
+-- 97
+-- 114
+-- 146
+-- 205
+-- 186
+-- 175
+
+
+
+
+-- ]]--
+--                     psiPointSoundTest = {
+--                         order = 7,
+--                         name = "Play selected sound (test)",
+--                         type = "execute",
+--                         width = "full",
+--                         func = function()
+--                             Sound.Play(self.db.profile.psiPointSoundSelector)
+--                         end,
+--                     },
                 },
             },
 -----------------------------------------------------------------------------------------------
