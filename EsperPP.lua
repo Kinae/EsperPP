@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.91"
+local sVersion = "9.1.0.92"
 
 require "Window"
 require "GameLib"
@@ -55,6 +55,7 @@ local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", t
 -----------------------------------------------------------------------------------------------
 local uPlayer = nil
 local nAnchorEdge = 3
+local nMBAbilityId = 19019
 
 local defaults = {
     profile = {
@@ -89,6 +90,11 @@ local defaults = {
         tPsiChargePos = {825,492,871,538},
         nPsiChargeBuffWindowOffset = 11,
         nPsiChargeOpacity = 0.7,
+        nMindBurstDotCount = 5,
+        nMindBurstOpacity = 0.5,
+        bShowMBAssist = true,
+        nMindBurstPPShowThreshold = 3,
+        MBAssistColor = {0.01,0.85,0.91,1},
     }
 }
 
@@ -540,6 +546,102 @@ If you messed with the settings but could not quite get it the way you wanted, t
                     },
                 },
             },
+            TelegrapAssist = {
+                order = 40,
+                name = "Telegraph assist",
+                type = "group",
+                args={
+                    telegraphAssistHeader = {
+                        order = 1,
+                        name = "Telegraph assist READ ME!",
+                        type = "header",
+                    },
+                    telegraphAssisttDescription = {
+                        order = 2,
+                        name = [[Telegraph assist: This feature trys to provide some assitance for those instant spell that you really don't want to miss because the intended target was not inside the telegraph.
+ 
+Caveats: This feature works best on flat surfaces, and is probably not very useful when you are fighting on uneaven ground. Since there is no way to compensate for the grounds elevation sadly it can't really get better than as it is now.
+ 
+Remember telegraph assists only shows up if you have the corresponding ability in your LAS.]],
+                        type = "description",
+                    },
+                    telegraphAssisttOptionsHeader = {
+                        order = 3,
+                        name = "Telegraph assistt options",
+                        type = "header",
+                    },
+                    bShowMBAssist = {
+                        order = 10,
+                        name = "Show mind burst telegraph asssist",
+                        type = "toggle",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v
+                            if v then
+                                self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
+                                local r,g,b = unpack(self.db.profile.MBAssistColor)
+                                self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
+                            else
+                                self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
+                            end
+                        end,
+                    },
+                    nMindBurstPPShowThreshold = {
+                        order = 15,
+                        name = "Mind burst telegraph assist psi point treshold",
+                        desc = "Amount of psi points you need to have for the mind burst telegraph assist to show up. 0 means always show.",
+                        type = "range",
+                        disabled = function() return not self.db.profile.bShowMBAssist end,
+                        min = 0,
+                        max = 5,
+                        step = 1,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v end,
+                    },
+                    nMindBurstOpacity = {
+                        order = 20,
+                        name = "Mind burst telergaph assist opacity",
+                        type = "range",
+                        min = 0,
+                        max = 1,
+                        step = 0.01,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v
+                            local r,g,b = unpack(self.db.profile.MBAssistColor)
+                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,v))
+                        end,
+                    },
+                    nMindBurstDotCount = {
+                        order = 30,
+                        name = "Mind burst dots per line",
+                        type = "range",
+                        min = 2,
+                        max = 50,
+                        step = 1,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v
+                            self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
+                            self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, v)
+                            local r,g,b = unpack(self.db.profile.MBAssistColor)
+                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
+                        end,
+                    },
+                    MBAssistColor = {
+                        width = "full",
+                        order = 20,
+                        name = "Color for mind burst assist",
+                        type = "color",
+                        hasAlpha = true,
+                        get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}
+                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
+                        end,
+                    },
+                },
+            },
         }
     }
 end
@@ -585,15 +687,14 @@ function addon:OnEnable()
     self.wDisplay:Show(true)
 
     self.tMarkers = {}
-    for i = 1, 3 do
-        self.tMarkers[i] = {}
-        for j = 1, 3 do
-            self.tMarkers[i][j] = Apollo.LoadForm("EsperPP.xml", "Marker", "InWorldHudStratum", self)
-            self.tMarkers[i][j]:SetBGColor(CColor.new(0.22,0.67,0.77,0.5))
-        end
-    end
+
+    self.bMBonLAS = nil
     self.nMBDegree = 15
     self.nMBRange = 25+1/math.cos(math.rad(self.nMBDegree))
+
+    self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
+    local r,g,b = unpack(self.db.profile.MBAssistColor)
+    self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
 
     Apollo.RegisterEventHandler("AbilityBookChange", "OnAbilityBookChange", self)
     Apollo.RegisterEventHandler("NextFrame", "OnUpdate", self)
@@ -632,6 +733,36 @@ end
 -- Ability related functions
 -----------------------------------------------------------------------------------------------
 
+function addon:SetUpMarkersForTelegraphAssist(nAbilityId, nLineCount, nDotCount)
+    self.tMarkers[nAbilityId] = {}
+    for i = 1, nLineCount do
+        self.tMarkers[nAbilityId][i] = {}
+        for j = 1, nDotCount do
+            self.tMarkers[nAbilityId][i][j] = Apollo.LoadForm("EsperPP.xml", "Marker", "InWorldHudStratum", self)
+        end
+    end
+end
+
+function addon:DestroyMarkersForTelegraphAssist(nAbilityId)
+    if not self.tMarkers[nAbilityId] then return end
+    for _, line in ipairs(self.tMarkers[nAbilityId]) do
+        for _, wDot in ipairs(line) do
+            wDot:Destroy()
+        end
+    end
+    self.tMarkers[nAbilityId] = nil
+end
+
+function addon:SetTelegraphAssistColor(nAbilityId, color)
+    if not self.tMarkers[nAbilityId] then return end
+    for _, line in ipairs(self.tMarkers[nAbilityId]) do
+        for _, wDot in ipairs(line) do
+            wDot:SetBGColor(color)
+        end
+    end
+
+end
+
 function addon:getCBSpellIds()
     local tList = AbilityBook.GetAbilitiesList()
     for nIndex, tData in ipairs(tList) do
@@ -667,25 +798,27 @@ end
 
 function addon:DelayedAbilityBookCheck()
     local tCurrLAS = ActionSetLib.GetCurrentActionSet()
-    local nSpellId
+    local nCBSpellId, nMBSpellId
     if tCurrLAS then
         for nIndex, nAbilityId in ipairs(tCurrLAS) do
             if nAbilityId == 28756 then -- Concentrated Blades
-                nSpellId = self:GetTieredSpellIdFromLasAbilityId(nAbilityId)
-                if self.abilityBookTimer then
-                    self:CancelTimer(self.abilityBookTimer)
-                    self.abilityBookTimer = nil
-                end
+                nCBSpellId = self:GetTieredSpellIdFromLasAbilityId(nAbilityId)
+            elseif nAbilityId == nMBAbilityId then -- Mind Burst
+                nMBSpellId = self:GetTieredSpellIdFromLasAbilityId(nAbilityId)
             end
+        end
+        if self.abilityBookTimer then
+            self:CancelTimer(self.abilityBookTimer)
+            self.abilityBookTimer = nil
         end
     else
         if not self.abilityBookTimer then
             self.abilityBookTimer = self:ScheduleRepeatingTimer("DelayedAbilityBookCheck", 1)
         end
-        --Apollo.CreateTimer("DelayedAbilityBookCheck", 1, false)
     end
-    if nSpellId then
-        self.splCB = GameLib.GetSpell(nSpellId)
+
+    if nCBSpellId then
+        self.splCB = GameLib.GetSpell(nCBSpellId)
         if self.splCB then
             self.tCBChargeData = self.splCB:GetAbilityCharges()
         end
@@ -696,6 +829,11 @@ function addon:DelayedAbilityBookCheck()
             local bar = self.wDisplay:FindChild(("ProgressBar%d"):format(i))
             bar:Show(false)
         end
+    end
+    if nMBSpellId then
+        self.bMBonLAS = true
+    else
+        self.bMBonLAS = nil
     end
 end
 
@@ -822,52 +960,44 @@ function addon:OnUpdate()
         end
     end
 
+    if self.bMBonLAS and self.db.profile.bShowMBAssist and self.tMarkers[nMBAbilityId] and #self.tMarkers[nMBAbilityId] > 1 then
+        local tFacing, tPos = uPlayer:GetFacing(), uPlayer:GetPosition()
+        if tFacing and tPos then
+            local rot = math.atan2(tFacing.x, tFacing.z)
 
+            local rotPlus = rot+math.rad(self.nMBDegree) -- offset
+            local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
 
+            local nOffset, nOffsetDegree = 1, 180 -- center point is not on the player but behind it
 
-
-    local tFacing = uPlayer:GetFacing()
-    if not tFacing then return end
-
-    local tPos = uPlayer:GetPosition()
-    if not tPos then return end
-
-    local rot = math.atan2(tFacing.x, tFacing.z)
-
-    local rotPlus = rot+math.rad(self.nMBDegree) -- offset
-    local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
-
-    for nCounter = 1, 3 do -- 3 safe areas per mob
-        for i = 1, #self.tMarkers[nCounter] do
-            if (nCounter%3) == 1 then
-                local nOffset, nOffsetDegree = 1, 180
-                local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-                local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-                local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-                local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nCounter]) * (i-1))
-                self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
-                self.tMarkers[nCounter][i]:Show(true)
-            elseif (nCounter%3) == 2 then
-                local nOffset, nOffsetDegree = 1, 180
-                local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-                local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-                local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-                local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nCounter]) * (i-1))
-                self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
-                self.tMarkers[nCounter][i]:Show(true)
-            elseif (nCounter%3) == 0 then
-                local nOffset, nOffsetDegree = 1, 180
-                local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-                local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-                local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
-                local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
-                local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nCounter]-1)) * (i-1))
-                self.tMarkers[nCounter][i]:SetWorldLocation(vVector)
-                self.tMarkers[nCounter][i]:Show(true)
+            for nCounter = 1, #self.tMarkers[nMBAbilityId] do
+                for i = 1, #self.tMarkers[nMBAbilityId][nCounter] do
+                    if (nCounter%3) == 1 then
+                        local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                        local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                        local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                        local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                        local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
+                        self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                    elseif (nCounter%3) == 2 then
+                        local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                        local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                        local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                        local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                        local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
+                        self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                    elseif (nCounter%3) == 0 then
+                        local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                        local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                        local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                        local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                        local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
+                        local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
+                        local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nMBAbilityId][nCounter]-1)) * (i-1))
+                        self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                    end
+                    self.tMarkers[nMBAbilityId][nCounter][i]:Show(self.db.profile.nMindBurstPPShowThreshold <= nPP)
+                end
             end
         end
     end
