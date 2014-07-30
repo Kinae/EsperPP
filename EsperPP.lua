@@ -14,7 +14,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.96"
+local sVersion = "9.1.0.97"
 
 require "Window"
 require "GameLib"
@@ -424,6 +424,15 @@ function addon:OnInitialize()
 --                         get = function(info) return self.db.profile[info[#info]] end,
 --                         set = function(info, v) self.db.profile[info[#info]] = v end,
 --                     },
+--                     psiPointSoundTest = {
+--                         order = 7,
+--                         name = "Play selected sound (test)",
+--                         type = "execute",
+--                         width = "full",
+--                         func = function()
+--                             Sound.Play(self.db.profile.psiPointSoundSelector)
+--                         end,
+--                     },
 -- --[[
 -- 96
 -- 97
@@ -434,18 +443,28 @@ function addon:OnInitialize()
 -- 175
 
 
-
-
 -- ]]--
---                     psiPointSoundTest = {
---                         order = 7,
---                         name = "Play selected sound (test)",
---                         type = "execute",
---                         width = "full",
---                         func = function()
---                             Sound.Play(self.db.profile.psiPointSoundSelector)
---                         end,
---                     },
+                    psiPointSoundSelector = {
+                        order = 6,
+                        name = "Psi point sound selector",
+                        type = "input",
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v end,
+                    },
+                    psiPointSoundTest = {
+                        order = 7,
+                        name = "Play selected sound (test)",
+                        type = "execute",
+                        width = "full",
+                        func = function()
+                            if type(self.db.profile.psiPointSoundSelector) == "number" then
+                                Sound.Play(self.db.profile.psiPointSoundSelector)
+                            else
+                                Sound.PlayFile(self.db.profile.psiPointSoundSelector)
+                            end
+                        end,
+                    },
                 },
             },
 -----------------------------------------------------------------------------------------------
