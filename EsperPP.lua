@@ -13,7 +13,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.94"
+local sVersion = "9.1.0.95"
 
 require "Window"
 require "GameLib"
@@ -766,7 +766,6 @@ function addon:SetTelegraphAssistColor(nAbilityId, color)
             wDot:SetBGColor(color)
         end
     end
-
 end
 
 function addon:getCBSpellIds()
@@ -792,8 +791,7 @@ do
     -- utility function that gets the spellId from abilityId
     function addon:GetTieredSpellIdFromLasAbilityId(nAbilityId)
         -- this only works for abilities the player can cast
-        --local wAbility = Apollo.LoadForm("EsperPP.xml", "TempAbilityWindow", nil, self)
-        -- this should be faster than loading xmls
+        -- this should be faster than loading xml files
         local wAbility = GeminiGUI:Create("AbilityItemWindow", tTempAbilityWindowDef):GetInstance()
         wAbility:SetAbilityId(nAbilityId)
         local sSpellId = wAbility:GetAbilityTierId()
@@ -845,7 +843,6 @@ end
 
 function addon:OnAbilityBookChange()
     -- have to do this because if you get ability list at this event then it will return what you had not what you have right now.
-    --Apollo.CreateTimer("DelayedAbilityBookCheck", 0.2, false)
     self:ScheduleTimer("DelayedAbilityBookCheck", 0.2)
 end
 
@@ -896,7 +893,6 @@ function addon:NotSoFastTimer()
         bar:SetMax(nMax)
         bar:SetProgress(nCurr)
         bar:SetText(formatFocusText(self.db.profile.focusTextStyle, nCurr, nMax))
-        --bar:SetText(math.floor(nCurr))
         if self.db.profile.bReactiveFocusColor then
             local r,g,b
             if ((nCurr / nMax) <= 0.25) then -- Reactive Color Change on Focus Loss
