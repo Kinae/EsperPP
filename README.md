@@ -19,6 +19,8 @@ Espers.
 * Movable psi point display
 * The Psi point trackers color is now customizable. By default the psi point counter turns yellow when at 4 psi points. Turns red when at 5 (aka max) also an extra graphic appears to draw more attention to the fact you are at max psi points.
 * Color the psi point tracking interface different when out of combat.
+* You can have the addon play a sound effect when you reach a pre set amount of psi points.
+* You can have the addon adjust volume while the psi point sound effect is playing then restore it back in case you usually play with the game muted.
 * Show timer bars for when Concentrated Blade is supposed to land. These timers bars are created when you use the ability so they might show up for CBs that you casted and missed your target. I have not find a way to track when you actually spawn a CB that'll land, so for now all casts are assumed to land.
 * Concentrated blade timer can be hidden.
 * Movable / sizable focus bar for the healers. You can also just hide it if you are a DPS.

@@ -18,7 +18,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.99"
+local sVersion = "9.1.0.100"
 
 require "Window"
 require "GameLib"
