@@ -34,6 +34,8 @@ Espers.
 
 > /EsperPP
 
+> /esperpp
+
 ##Planned features:
 * Additional customization based on requests.
 * Add a more elegant way of tracking for "Psi Charge" buff that you get when you use either tier 8 Telekinetic Strike or Psychic Frenzy. Right now you can't track it because the API does not return this buff in any of the tables. Bug reported: https://forums.wildstar-online.com/forums/index.php?/topic/38160-buff-api-bug-with-psi-charge/ waiting for Carbine to fix it.
