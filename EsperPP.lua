@@ -12,9 +12,11 @@
         localization
         move options to it's own file
 
+        allow scaling of the dots for MB telegraph assist
+
 ]]--
 
-local sVersion = "9.1.0.97"
+local sVersion = "9.1.0.98"
 
 require "Window"
 require "GameLib"
@@ -99,6 +101,13 @@ local defaults = {
         bShowMBAssist = true,
         nMindBurstPPShowThreshold = 3,
         MBAssistColor = {0.01,0.85,0.91,1},
+        nUISoundsVolumeValue = 0.7,
+        nMasterVolumeValue = 1,
+        nVolumeChangeDuration = 5,
+        psiPointSoundEffect = "175",
+        nPlaySoundForPsiPoint = 5,
+        bPlaySoundForPsiPoint = false,
+        bChangeVolumeForPsiPoints = true,
     }
 }
 
@@ -146,6 +155,8 @@ function addon:OnInitialize()
 
     self.myOptionsTable = {
         type = "group",
+        get = function(info) return self.db.profile[info[#info]] end,
+        set = function(info, v) self.db.profile[info[#info]] = v end,
         args = {
             locked = {
                 order = 1,
@@ -259,8 +270,7 @@ function addon:OnInitialize()
                         desc = "Color the focus bar's background based on how much focus you have currently.",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
+
                     },
                     reactiveFocusBarColorOver75Percent = {
                         width = "full",
@@ -328,8 +338,6 @@ function addon:OnInitialize()
                         desc = "Show 0 psi point too.",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     bShowFullEffect = {
                         order = 5,
@@ -337,8 +345,6 @@ function addon:OnInitialize()
                         desc = "Show extra effect when you have the maximum possible psi points.",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     psiPointColoringHeader = {
                         order = 8,
@@ -408,62 +414,96 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
                     },
---                     psiPointSoundHeader = {
---                         order = 70,
---                         name = "Psi point sound options",
---                         type = "header",
---                     },
---                     psiPointSoundSelector = {
---                         order = 6,
---                         name = "Psi point sound selector",
---                         type = "range",
---                         min = 1,
---                         max = 300,
---                         step = 1,
---                         width = "full",
---                         get = function(info) return self.db.profile[info[#info]] end,
---                         set = function(info, v) self.db.profile[info[#info]] = v end,
---                     },
---                     psiPointSoundTest = {
---                         order = 7,
---                         name = "Play selected sound (test)",
---                         type = "execute",
---                         width = "full",
---                         func = function()
---                             Sound.Play(self.db.profile.psiPointSoundSelector)
---                         end,
---                     },
--- --[[
--- 96
--- 97
--- 114
--- 146
--- 205
--- 186
--- 175
-
-
--- ]]--
-                    psiPointSoundSelector = {
-                        order = 6,
-                        name = "Psi point sound selector",
-                        type = "input",
+                    psiPointSoundHeader = {
+                        order = 70,
+                        name = "Psi point sound options",
+                        type = "header",
+                    },
+                    bPlaySoundForPsiPoint = {
+                        order = 80,
+                        name = "Play sound when reaching this amount of psi point(s)",
+                        type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
+                    },
+                    nPlaySoundForPsiPoint = {
+                        order = 85,
+                        name = "Play sound when at the configured psi point count",
+                        type = "range",
+                        min = 1,
+                        max = 5,
+                        step = 1,
+                        disabled = function() return not self.db.profile.bPlaySoundForPsiPoint end,
+                        width = "full",
+                    },
+                    psiPointSoundEffect = {
+                        order = 90,
+                        width = "full",
+                        name = "Psi point sound selector",
+                        type = "select",
+                        values = {
+                            ["96"] = "96",
+                            ["97"] = "97",
+                            ["114"] = "114",
+                            ["146"] = "146",
+                            ["205"] = "205",
+                            ["186"] = "186",
+                            ["175"] = "175",
+                            ["Sounds/Airhorn.wav"] = "Air horn",
+                            ["Sounds/DING.wav"] = "Ding",
+                        },
+                        style = "dropdown",
+
                     },
                     psiPointSoundTest = {
-                        order = 7,
+                        order = 100,
                         name = "Play selected sound (test)",
                         type = "execute",
                         width = "full",
-                        func = function()
-                            if type(self.db.profile.psiPointSoundSelector) == "number" then
-                                Sound.Play(self.db.profile.psiPointSoundSelector)
-                            else
-                                Sound.PlayFile(self.db.profile.psiPointSoundSelector)
-                            end
-                        end,
+                        func = function() self:PlayPPSound() end,
+                    },
+                    psiPointVolumeHeader = {
+                        order = 110,
+                        name = "Psi point volume options",
+                        type = "header",
+                    },
+                    bChangeVolumeForPsiPoints = {
+                        order = 120,
+                        name = "Change volume for Psi Point",
+                        desc = "Change the games volume while the sound is playing for the specific psi point count, then restore sound volume settings.",
+                        disabled = function() return not self.db.profile.bPlaySoundForPsiPoint end,
+                        type = "toggle",
+                        width = "full",
+                    },
+                    nVolumeChangeDuration = {
+                        order = 130,
+                        name = "Volume change duration",
+                        desc = "For how long should the volume be changed to the given levels before setting them back to original values. (in seconds)",
+                        disabled = function() return not self.db.profile.bChangeVolumeForPsiPoints end,
+                        type = "range",
+                        width = "full",
+                        min = 0,
+                        max = 10,
+                        step = 0.1,
+                    },
+                    nMasterVolumeValue = {
+                        order = 140,
+                        name = "Master volume while sound is playing",
+                        disabled = function() return not self.db.profile.bChangeVolumeForPsiPoints end,
+                        type = "range",
+                        width = "full",
+                        min = 0,
+                        max = 1,
+                        step = 0.1,
+                    },
+                    nUISoundsVolumeValue = {
+                        order = 150,
+                        name = "UI Sound FX volume while sound is playing",
+                        disabled = function() return not self.db.profile.bChangeVolumeForPsiPoints end,
+                        type = "range",
+                        width = "full",
+                        min = 0,
+                        max = 1,
+                        step = 0.1,
                     },
                 },
             },
@@ -485,8 +525,6 @@ function addon:OnInitialize()
                         name = "Show concentrated blade timers",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                 },
             },
@@ -557,8 +595,6 @@ If you messed with the settings but could not quite get it the way you wanted, t
                         max = 50,
                         step = 1,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     nPsiChargeOpacity = {
                         order = 20,
@@ -657,8 +693,6 @@ Remember telegraph assists only shows up if you have the corresponding ability i
                         max = 5,
                         step = 1,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     nMindBurstOpacity = {
                         order = 20,
@@ -743,6 +777,8 @@ function addon:OnEnable()
     self.wFocus:FindChild("FocusProgress"):SetTextColor(CColor.new(unpack(self.db.profile.focusTextColor)))
     self.wFocus:FindChild("FocusProgress"):SetFont(tMyFontTable[self.db.profile.focusFont] or "CRB_Interface14_BO")
 
+    self.nLastPP = 0
+
     self.wAnchor = Apollo.LoadForm("EsperPP.xml", "Anchor", nil, self)
     self.wDisplay = Apollo.LoadForm("EsperPP.xml", "Display", nil, self)
     self.wDisplay:Show(true)
@@ -792,12 +828,53 @@ function addon:OnEnable()
     self.wFocus:Show(self.db.profile.bFocusShown)
 
 
-    --Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
 -- Ability related functions
 -----------------------------------------------------------------------------------------------
+
+do
+    local nUIVolume, nMasterVolume
+    local restoreTimer = nil
+    local bAllowVolumeSave = true
+    function addon:RestoreVolume()
+        Apollo.SetConsoleVariable("sound.volumeMaster", nMasterVolume)
+        Apollo.SetConsoleVariable("sound.volumeUI", nUIVolume)
+        bAllowVolumeSave = true
+    end
+    function addon:PlayPPSound()
+        -- save volume settings
+        if self.db.profile.bChangeVolumeForPsiPoints then
+            local nCurrMasterVolume = Apollo.GetConsoleVariable("sound.volumeMaster")
+            local nCurrUIVolume = Apollo.GetConsoleVariable("sound.volumeUI")
+            -- lets not save current volume if it is same as the one we are using in config
+            if bAllowVolumeSave then
+                nMasterVolume = nCurrMasterVolume
+                nUIVolume = nCurrUIVolume
+            end
+            bAllowVolumeSave = false
+            -- set volume as set in the options
+            Apollo.SetConsoleVariable("sound.volumeMaster", self.db.profile.nMasterVolumeValue)
+            Apollo.SetConsoleVariable("sound.volumeUI", self.db.profile.nUISoundsVolumeValue)
+        end
+        -- play sound
+        if self.db.profile.psiPointSoundEffect:match("%d+") then
+            Sound.Play(self.db.profile.psiPointSoundEffect)
+        else
+            Sound.PlayFile(self.db.profile.psiPointSoundEffect)
+        end
+        -- wait for the the time set in the options to restore volume
+        if self.db.profile.bChangeVolumeForPsiPoints then
+            if restoreTimer then
+                self:CancelTimer(restoreTimer, true)
+                restoreTimer = nil
+            end
+            restoreTimer = self:ScheduleTimer("RestoreVolume", self.db.profile.nVolumeChangeDuration)
+        end
+    end
+end
 
 function addon:SetUpMarkersForTelegraphAssist(nAbilityId, nLineCount, nDotCount)
     self.tMarkers[nAbilityId] = {}
@@ -1003,8 +1080,15 @@ function addon:OnUpdate()
     if uPlayer:GetClassId() ~= GameLib.CodeEnumClass.Esper then self.wDisplay:Show(false) self.wAnchor:Show(false) return end -- not esper
 
     -- PP tracking
-     self.wDisplay:Show(true)
+    self.wDisplay:Show(true)
     local nPP = uPlayer:GetResource(1)
+    if self.nLastPP ~= nPP then -- PP changed
+        -- do the sound stuff
+        if self.db.profile.bPlaySoundForPsiPoint and self.db.profile.nPlaySoundForPsiPoint == nPP then
+            self:PlayPPSound()
+        end
+        self.nLastPP = nPP
+    end
     self.wDisplay:FindChild("Text"):SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
     self.wDisplay:FindChild("Full"):Show((self.db.profile.bShowFullEffect and nPP == uPlayer:GetMaxResource(1)) and true or false)
 
@@ -1026,43 +1110,52 @@ function addon:OnUpdate()
     --  self.wDisplay:FindChild("T8stack"):Show(false)
     --end
 
+
     if self.bMBonLAS and self.db.profile.bShowMBAssist and self.tMarkers[nMBAbilityId] and #self.tMarkers[nMBAbilityId] > 1 then
-        local tFacing, tPos = uPlayer:GetFacing(), uPlayer:GetPosition()
-        if tFacing and tPos then
-            local rot = math.atan2(tFacing.x, tFacing.z)
-
-            local rotPlus = rot+math.rad(self.nMBDegree) -- offset
-            local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
-
-            local nOffset, nOffsetDegree = 1, 180 -- center point is not on the player but behind it
-
+        if self.db.profile.nMindBurstPPShowThreshold > nPP then
             for nCounter = 1, #self.tMarkers[nMBAbilityId] do
                 for i = 1, #self.tMarkers[nMBAbilityId][nCounter] do
-                    if (nCounter%3) == 1 then
-                        local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                        local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-                        local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-                        local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-                        local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
-                        self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
-                    elseif (nCounter%3) == 2 then
-                        local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                        local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-                        local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-                        local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-                        local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
-                        self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
-                    elseif (nCounter%3) == 0 then
-                        local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                        local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-                        local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                        local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-                        local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
-                        local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
-                        local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nMBAbilityId][nCounter]-1)) * (i-1))
-                        self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                    self.tMarkers[nMBAbilityId][nCounter][i]:Show(false)
+                end
+            end
+        else
+            local tFacing, tPos = uPlayer:GetFacing(), uPlayer:GetPosition()
+            if tFacing and tPos then
+                local rot = math.atan2(tFacing.x, tFacing.z)
+
+                local rotPlus = rot+math.rad(self.nMBDegree) -- offset
+                local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
+
+                local nOffset, nOffsetDegree = 1, 180 -- center point is not on the player but behind it
+
+                for nCounter = 1, #self.tMarkers[nMBAbilityId] do
+                    for i = 1, #self.tMarkers[nMBAbilityId][nCounter] do
+                        if (nCounter%3) == 1 then
+                            local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                            local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                            local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                            local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                            local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
+                            self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                        elseif (nCounter%3) == 2 then
+                            local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                            local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                            local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                            local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                            local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
+                            self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                        elseif (nCounter%3) == 0 then
+                            local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                            local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                            local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                            local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                            local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
+                            local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
+                            local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nMBAbilityId][nCounter]-1)) * (i-1))
+                            self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                        end
+                        self.tMarkers[nMBAbilityId][nCounter][i]:Show(true)
                     end
-                    self.tMarkers[nMBAbilityId][nCounter][i]:Show(self.db.profile.nMindBurstPPShowThreshold <= nPP)
                 end
             end
         end
