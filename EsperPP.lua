@@ -5,18 +5,20 @@
 
 --[[
     TODO:
-        play sound when reaching 5 pp
-            have an option to adjust sound levels while sound is playing
         more CB customization
         move EVERYTHING to GeminiGUI
         localization
         move options to it's own file
 
         allow scaling of the dots for MB telegraph assist
+        GeminiConfig:
+            need to fix tooltip for "select" type widget tooltips
+            container sometimes not big enough to show bottom widgets even when it already scrolls
+                and only display all widgets once the window main options window gets resized
 
 ]]--
 
-local sVersion = "9.1.0.98"
+local sVersion = "9.1.0.99"
 
 require "Window"
 require "GameLib"
@@ -162,7 +164,6 @@ function addon:OnInitialize()
                 order = 1,
                 name = "Lock/Unlock all anchors",
                 desc = "Use this button to Lock/Unlock all the ancors. When toggled to unlock, it'll also reveal all hidden windows such as the focus bar.",
-                descStyle = "tooltip",
                 type = "toggle",
                 width = "full",
                 get = function(info) return self.db.profile[info[#info]] end,
@@ -181,8 +182,13 @@ function addon:OnInitialize()
                         name = "Focus bar settings",
                         type = "header",
                     },
-                    bShowFocusAnchor = {
+                    focusHelp = {
                         order = 2,
+                        name = "Remember you resize the focus bar when it is unlocked by draggign it's corners.",
+                        type = "description",
+                    },
+                    bShowFocusAnchor = {
+                        order = 3,
                         name = "Lock/Unlock focus bar",
                         type = "toggle",
                         width = "full",
@@ -190,7 +196,7 @@ function addon:OnInitialize()
                         set = function(info, v) self.db.profile[info[#info]] = v; self:LockUnlockFocusAnchor(v) end,
                     },
                     bFocusShown = {
-                        order = 3,
+                        order = 4,
                         name = "Hide/Show focus bar",
                         type = "toggle",
                         width = "full",
@@ -659,7 +665,9 @@ If you messed with the settings but could not quite get it the way you wanted, t
  
 Caveats: This feature works best on flat surfaces, and is probably not very useful when you are fighting on uneaven ground. Since there is no way to compensate for the grounds elevation sadly it can't really get better than as it is now.
  
-Remember telegraph assists only shows up if you have the corresponding ability in your LAS.]],
+Remember telegraph assists only shows up if you have the corresponding ability in your LAS.
+ 
+Note: this is quite resource heavy, especially the more dots you have the more resource the addon will use.]],
                         type = "description",
                     },
                     telegraphAssisttOptionsHeader = {
