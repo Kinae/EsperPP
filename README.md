@@ -7,7 +7,7 @@ Since I didn't like the default UI's Psi Point tracker for Espers I have created
 Some time have passed and now there are customization and a ton of new features (list below).
 
 ####Update:
-From version 9.1.0.1 there are some customization options
+From version 9.1.0.1 there are some customization options.
 
 ##Goal:
 Provide a cleaner Psi Point tracking interface and some additional aid for Espers.
