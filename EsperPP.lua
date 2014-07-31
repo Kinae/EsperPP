@@ -16,9 +16,11 @@
             container sometimes not big enough to show bottom widgets even when it already scrolls
                 and only display all widgets once the window main options window gets resized
 
+        option to color MB assist graph based on PP color
+
 ]]--
 
-local sVersion = "9.1.0.104"
+local sVersion = "9.1.0.106"
 
 require "Window"
 require "GameLib"
@@ -1010,7 +1012,8 @@ function addon:FastTimer()
             local tTrackingData = {}
             tTrackingData.nStartTime = self.nMyTime
             -- tier 4 or higher so it hits after 3.4 sec not 4.4
-            tTrackingData.nEndTime = (self.splCB:GetId() > 52023) and self.nMyTime+3.4 or self.nMyTime+4.4
+            -- XXX FIX THIS
+            tTrackingData.nEndTime = (self.splCB:GetId() > 52023) and self.nMyTime+3 or self.nMyTime+3
 
             self.tCBTracker[#self.tCBTracker+1] = tTrackingData
         end
