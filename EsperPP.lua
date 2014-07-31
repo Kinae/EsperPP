@@ -18,7 +18,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.102"
+local sVersion = "9.1.0.104"
 
 require "Window"
 require "GameLib"
@@ -836,7 +836,7 @@ function addon:OnEnable()
     self.wFocus:Show(self.db.profile.bFocusShown)
 
 
-    Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    --Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
