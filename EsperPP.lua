@@ -10,19 +10,13 @@
         localization
         move options to it's own file
 
-        allow scaling of the dots for MB telegraph assist
         GeminiConfig:
-            need to fix tooltip for "select" type widget tooltips
-            container sometimes not big enough to show bottom widgets even when it already scrolls
-                and only display all widgets once the window main options window gets resized
-
-        option to color MB assist graph based on PP color
 
         texture picker for focus/CB bar
 
 ]]--
 
-local sVersion = "9.1.0.110"
+local sVersion = "9.1.0.111"
 
 require "Window"
 require "GameLib"
@@ -505,6 +499,11 @@ function addon:OnInitialize()
                         type = "toggle",
                         width = "full",
                     },
+                    VolumeChangeDurationDesc = {
+                        order = 129,
+                        name = "Volume change duration: For how long should the volume be changed to the given levels before setting them back to original values. (in seconds)",
+                        type = "description",
+                    },
                     nVolumeChangeDuration = {
                         order = 130,
                         name = "Volume change duration",
@@ -728,6 +727,11 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                                 self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
                             end
                         end,
+                    },
+                    MindBurstPPShowThresholdDesc = {
+                        order = 14,
+                        name = "Mind burst telegraph assist psi point threshold: Amount of psi points you need to have for the mind burst telegraph assist to show up. 0 means always show.",
+                        type = "description",
                     },
                     nMindBurstPPShowThreshold = {
                         order = 15,
