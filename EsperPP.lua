@@ -22,7 +22,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.109"
+local sVersion = "9.1.0.110"
 
 require "Window"
 require "GameLib"
@@ -334,6 +334,11 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
                     },
+                    GeminiConfigScrollingFrameBottomWidgetFix = {
+                        order = 9999,
+                        name = "",
+                        type = "description",
+                    },
                 }
             },
 -----------------------------------------------------------------------------------------------
@@ -531,6 +536,11 @@ function addon:OnInitialize()
                         max = 1,
                         step = 0.1,
                     },
+                    GeminiConfigScrollingFrameBottomWidgetFix = {
+                        order = 9999,
+                        name = "",
+                        type = "description",
+                    },
                 },
             },
 -----------------------------------------------------------------------------------------------
@@ -551,6 +561,11 @@ function addon:OnInitialize()
                         name = "Show concentrated blade timers",
                         type = "toggle",
                         width = "full",
+                    },
+                    GeminiConfigScrollingFrameBottomWidgetFix = {
+                        order = 9999,
+                        name = "",
+                        type = "description",
                     },
                 },
             },
@@ -662,13 +677,16 @@ If you messed with the settings but could not quite get it the way you wanted, t
                             end
                         end,
                     },
-                    restFooter = {
-                        order = 102,
-                        name = "Reset psi charge options",
-                        type = "header",
+                    GeminiConfigScrollingFrameBottomWidgetFix = {
+                        order = 9999,
+                        name = "",
+                        type = "description",
                     },
                 },
             },
+-----------------------------------------------------------------------------------------------
+-- Telegraph assist options
+-----------------------------------------------------------------------------------------------
             TelegrapAssist = {
                 order = 40,
                 name = "Telegraph assist",
@@ -786,6 +804,11 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}
                             self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
                         end,
+                    },
+                    GeminiConfigScrollingFrameBottomWidgetFix = {
+                        order = 9999,
+                        name = "",
+                        type = "description",
                     },
                 },
             },
