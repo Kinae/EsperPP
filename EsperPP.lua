@@ -22,7 +22,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.108"
+local sVersion = "9.1.0.109"
 
 require "Window"
 require "GameLib"
@@ -159,6 +159,7 @@ end
 -- Initialization
 -----------------------------------------------------------------------------------------------
 function addon:OnInitialize()
+    -- Telegraph assist marker definition
     self.tMarkerDef = {
         AnchorOffsets = { -5, -5, 5, 5 },
         AnchorPoints = { "SELF", "SELF", "SELF", "SELF" },
@@ -182,7 +183,7 @@ function addon:OnInitialize()
             locked = {
                 order = 1,
                 name = "Lock/Unlock all anchors",
-                desc = "Use this button to Lock/Unlock all the ancors. When toggled to unlock, it'll also reveal all hidden windows such as the focus bar.",
+                desc = "Use this button to Lock/Unlock all the anchors. When toggled to unlock, it'll also reveal all hidden windows such as the focus bar.",
                 type = "toggle",
                 width = "full",
                 get = function(info) return self.db.profile[info[#info]] end,
@@ -203,7 +204,7 @@ function addon:OnInitialize()
                     },
                     focusHelp = {
                         order = 2,
-                        name = "Remember you resize the focus bar when it is unlocked by draggign it's corners.",
+                        name = "Remember you resize the focus bar when it is unlocked by dragging it's corners.",
                         type = "description",
                     },
                     bShowFocusAnchor = {
@@ -680,9 +681,9 @@ If you messed with the settings but could not quite get it the way you wanted, t
                     },
                     telegraphAssisttDescription = {
                         order = 2,
-                        name = [[Telegraph assist: This feature trys to provide some assitance for those instant spell that you really don't want to miss because the intended target was not inside the telegraph.
+                        name = [[Telegraph assist: This feature trys to provide some assistance for those instant spell that you really don't want to miss because the intended target was not inside the telegraph.
  
-Caveats: This feature works best on flat surfaces, and is probably not very useful when you are fighting on uneaven ground. Since there is no way to compensate for the grounds elevation sadly it can't really get better than as it is now.
+Caveats: This feature works best on flat surfaces, and is probably not very useful when you are fighting on uneven ground. Since there is no way to compensate for the grounds elevation sadly it can't really get better than as it is now.
  
 Remember telegraph assists only shows up if you have the corresponding ability in your LAS.
  
@@ -691,12 +692,12 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                     },
                     telegraphAssisttOptionsHeader = {
                         order = 3,
-                        name = "Telegraph assistt options",
+                        name = "Telegraph assist options",
                         type = "header",
                     },
                     bShowMBAssist = {
                         order = 10,
-                        name = "Show mind burst telegraph asssist",
+                        name = "Show mind burst telegraph assist",
                         type = "toggle",
                         width = "full",
                         get = function(info) return self.db.profile[info[#info]] end,
@@ -712,7 +713,7 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                     },
                     nMindBurstPPShowThreshold = {
                         order = 15,
-                        name = "Mind burst telegraph assist psi point treshold",
+                        name = "Mind burst telegraph assist psi point threshold",
                         desc = "Amount of psi points you need to have for the mind burst telegraph assist to show up. 0 means always show.",
                         type = "range",
                         disabled = function() return not self.db.profile.bShowMBAssist end,
@@ -723,7 +724,7 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                     },
                     nMindBurstOpacity = {
                         order = 20,
-                        name = "Mind burst telergaph assist opacity",
+                        name = "Mind burst telegraph assist opacity",
                         type = "range",
                         min = 0,
                         max = 1,
