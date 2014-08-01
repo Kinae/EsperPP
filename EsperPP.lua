@@ -18,9 +18,11 @@
 
         option to color MB assist graph based on PP color
 
+        texture picker for focus/CB bar
+
 ]]--
 
-local sVersion = "9.1.0.106"
+local sVersion = "9.1.0.107"
 
 require "Window"
 require "GameLib"
@@ -112,6 +114,7 @@ local defaults = {
         nPlaySoundForPsiPoint = 5,
         bPlaySoundForPsiPoint = false,
         bChangeVolumeForPsiPoints = true,
+        bSimpleColorMBAssist = false,
     }
 }
 
@@ -734,10 +737,18 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                             self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
                         end,
                     },
+                    bSimpleColorMBAssist = {
+                        order = 40,
+                        name = "Simple color mind burst telegraph assist",
+                        desc = "Use only one color for mind burst telegraph assist, if this is off then the dots will be colored based on your psi point color settings.",
+                        type = "toggle",
+                        width = "full",
+                    },
                     MBAssistColor = {
                         width = "full",
-                        order = 20,
+                        order = 50,
                         name = "Color for mind burst assist",
+                        disabled = function() return not self.db.profile.bSimpleColorMBAssist end,
                         type = "color",
                         hasAlpha = true,
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
@@ -1013,7 +1024,7 @@ function addon:FastTimer()
             tTrackingData.nStartTime = self.nMyTime
             -- tier 4 or higher so it hits after 3.4 sec not 4.4
             -- XXX FIX THIS
-            tTrackingData.nEndTime = (self.splCB:GetId() > 52023) and self.nMyTime+3 or self.nMyTime+3
+            tTrackingData.nEndTime = self.nMyTime+3
 
             self.tCBTracker[#self.tCBTracker+1] = tTrackingData
         end
@@ -1103,11 +1114,8 @@ function addon:OnUpdate()
     self.wDisplay:FindChild("Text"):SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
     self.wDisplay:FindChild("Full"):Show((self.db.profile.bShowFullEffect and nPP == uPlayer:GetMaxResource(1)) and true or false)
 
-    if uPlayer:IsInCombat() then
-        self.wDisplay:FindChild("Text"):SetTextColor(CColor.new(unpack(self.db.profile["ppColor"..nPP])))
-    else
-        self.wDisplay:FindChild("Text"):SetTextColor(CColor.new(unpack(self.db.profile.ppColorOOC)))
-    end
+    self.wDisplay:FindChild("Text"):SetTextColor(uPlayer:IsInCombat() and CColor.new(unpack(self.db.profile["ppColor"..nPP])) or CColor.new(unpack(self.db.profile.ppColorOOC)))
+
 
     -- T8 builder stack tracking
     -- buff or API is bugged and does not show up among the return values
@@ -1164,6 +1172,9 @@ function addon:OnUpdate()
                             local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
                             local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nMBAbilityId][nCounter]-1)) * (i-1))
                             self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
+                        end
+                        if not self.db.profile.bSimpleColorMBAssist then
+                            self.tMarkers[nMBAbilityId][nCounter][i]:SetBGColor(uPlayer:IsInCombat() and CColor.new(unpack(self.db.profile["ppColor"..nPP])) or CColor.new(unpack(self.db.profile.ppColorOOC)))
                         end
                         self.tMarkers[nMBAbilityId][nCounter][i]:Show(true)
                     end
