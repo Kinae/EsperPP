@@ -22,7 +22,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.107"
+local sVersion = "9.1.0.108"
 
 require "Window"
 require "GameLib"
@@ -115,6 +115,7 @@ local defaults = {
         bPlaySoundForPsiPoint = false,
         bChangeVolumeForPsiPoints = true,
         bSimpleColorMBAssist = false,
+        nMindBurstDotSize = 6,
     }
 }
 
@@ -158,6 +159,19 @@ end
 -- Initialization
 -----------------------------------------------------------------------------------------------
 function addon:OnInitialize()
+    self.tMarkerDef = {
+        AnchorOffsets = { -5, -5, 5, 5 },
+        AnchorPoints = { "SELF", "SELF", "SELF", "SELF" },
+        Class = "WorldFixedWindow",
+        RelativeToClient = true,
+        Picture = true,
+        SwallowMouseClicks = true,
+        Overlapped = true,
+        IgnoreMouse = true,
+        Visible = false,
+        Name = "Marker",
+        Sprite = "ClientSprites:WhiteCircle",
+    }
     self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, defaults, true)
 
     self.myOptionsTable = {
@@ -737,6 +751,22 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                             self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
                         end,
                     },
+                    nMindBurstDotSize = {
+                        order = 35,
+                        name = "Mind burst dots size",
+                        type = "range",
+                        min = 1,
+                        max = 20,
+                        step = 1,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v
+                            self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
+                            self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, v)
+                            local r,g,b = unpack(self.db.profile.MBAssistColor)
+                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
+                        end,
+                    },
                     bSimpleColorMBAssist = {
                         order = 40,
                         name = "Simple color mind burst telegraph assist",
@@ -898,11 +928,14 @@ do
 end
 
 function addon:SetUpMarkersForTelegraphAssist(nAbilityId, nLineCount, nDotCount)
+    local nScale = tonumber(self.db.profile.nMindBurstDotSize)
+    self.tMarkerDef.AnchorOffsets = {-nScale,-nScale,nScale,nScale}
+    local tMarker = GeminiGUI:Create("AbilityItemWindow", self.tMarkerDef)
     self.tMarkers[nAbilityId] = {}
     for i = 1, nLineCount do
         self.tMarkers[nAbilityId][i] = {}
         for j = 1, nDotCount do
-            self.tMarkers[nAbilityId][i][j] = Apollo.LoadForm("EsperPP.xml", "Marker", "InWorldHudStratum", self)
+            self.tMarkers[nAbilityId][i][j] = tMarker:GetInstance()
         end
     end
 end
