@@ -15,9 +15,12 @@
         texture picker for focus/CB bar
 
         apparently BuffContainerWindow is the culprit for a lot of the stacking performance issues so probably should make togging it on and off actually destroy/recreate the window
+
+        font and size selector for the main PP display
+            with offsets for positioning if necessary
 ]]--
 
-local sVersion = "9.1.0.112"
+local sVersion = "9.1.0.113"
 
 require "Window"
 require "GameLib"
