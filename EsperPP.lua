@@ -5,8 +5,6 @@
 
 --[[
     TODO:
-
-    
         more CB customization
         move EVERYTHING to GeminiGUI
         localization
@@ -23,7 +21,7 @@
 
 ]]--
 
-local sVersion = "9.1.0.115"
+local sVersion = "9.1.0.116"
 
 require "Window"
 require "GameLib"
