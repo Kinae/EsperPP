@@ -1,6 +1,7 @@
 -----------------------------------------------------------------------------------------------
 -- EsperPP
 -- Not so basic Esper helper by Caleb - calebzor@gmail.com
+-- /epp
 -----------------------------------------------------------------------------------------------
 
 --[[
@@ -14,7 +15,7 @@
         bar texture picker for focus/CB bar
 ]]--
 
-local sVersion = "9.1.0.119"
+local sVersion = "9.1.0.120"
 
 require "Window"
 require "GameLib"
