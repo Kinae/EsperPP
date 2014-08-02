@@ -5,6 +5,7 @@
 
 --[[
     TODO:
+    
         more CB customization
         move EVERYTHING to GeminiGUI
         localization
@@ -18,9 +19,10 @@
 
         font and size selector for the main PP display
             with offsets for positioning if necessary
+
 ]]--
 
-local sVersion = "9.1.0.113"
+local sVersion = "9.1.0.114"
 
 require "Window"
 require "GameLib"
