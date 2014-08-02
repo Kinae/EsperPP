@@ -14,7 +14,7 @@
         bar texture picker for focus/CB bar
 ]]--
 
-local sVersion = "9.1.0.118"
+local sVersion = "9.1.0.119"
 
 require "Window"
 require "GameLib"
@@ -66,18 +66,17 @@ local defaults = {
         locked = false,
         tPos = {},
         tFocusPos = {},
-        focusBarColor = {0.13,0.76,0.44,1},
-        focusBarBackgroundColor = {0.78,0,0.16,1},
+        focusBarColor = {0.13,0.76,0.44,0.7},
+        focusBarBackgroundColor = {0.78,0,0.16,0.7},
         focusFont = 73, -- CRB_Interface14_BO
         focusTextStyle = "def",
         focusTextColor = {1,1,1,1},
         bShowFocusAnchor = true,
-        nFocusOpacity = 0.7,
         bReactiveFocusColor = false,
-        reactiveFocusBarColorOver75Percent = {0,0.63,0.77,1},
-        reactiveFocusBarColorOver50Below75Percent = {1,0.96,0,1},
-        reactiveFocusBarColorOver25Below50Percent =  {1,0.71,0.03,1},
-        reactiveFocusBarColorBelow25Percent = {0.78,0,0.16,1},
+        reactiveFocusBarColorOver75Percent = {0,0.63,0.77,0.7},
+        reactiveFocusBarColorOver50Below75Percent = {1,0.96,0,0.7},
+        reactiveFocusBarColorOver25Below50Percent =  {1,0.71,0.03,0.7},
+        reactiveFocusBarColorBelow25Percent = {0.78,0,0.16,0.7},
         bShow0pp = false,
         bShowFullEffect = true,
         ppColor0 = {0.01,0.85,0.91,1},
@@ -86,7 +85,7 @@ local defaults = {
         ppColor3 = {0.01,0.85,0.91,1},
         ppColor4 = {1,0.96,0,1},
         ppColor5 = {0.78,0,0.16,1},
-        ppColorOOC = {0.13,0.76,0.44,1},
+        ppColorOOC = {0.13,0.76,0.44,0.7},
         nPPScale = 1,
         psiPointFont = 116,
         nLOffset = -59,
@@ -97,9 +96,8 @@ local defaults = {
         nCBWidth = 94,
         nCBHeight = 10,
         nCBPadding = 1,
-        CBBarColor = {0.20,0.64,0.67,1},
-        CBBarBackgroundColor = {0.03,0.05,0.07,1},
-        nCBOpacity = 0.7,
+        CBBarColor = {0.20,0.64,0.67,0.7},
+        CBBarBackgroundColor = {0.03,0.05,0.07,0.7},
         bShowPsiCharge = true,
         bShowPsiChargeAnchor = true,
         nPsiChargeScale = 3.5,
@@ -110,7 +108,7 @@ local defaults = {
         nMindBurstOpacity = 0.5,
         bShowMBAssist = true,
         nMindBurstPPShowThreshold = 3,
-        MBAssistColor = {0.01,0.85,0.91,1},
+        MBAssistColor = {0.01,0.85,0.91,0.5},
         nUISoundsVolumeValue = 0.7,
         nMasterVolumeValue = 1,
         nVolumeChangeDuration = 5,
@@ -190,7 +188,6 @@ function addon:OnInitialize()
                 desc = "Use this button to Lock/Unlock all the anchors. When toggled to unlock, it'll also reveal all hidden windows such as the focus bar.",
                 type = "toggle",
                 width = "full",
-                get = function(info) return self.db.profile[info[#info]] end,
                 set = function(info, v) self.db.profile[info[#info]] = v; self:LockUnlock(v) end,
             },
             focusBar = {
@@ -216,7 +213,6 @@ function addon:OnInitialize()
                         name = "Lock/Unlock focus bar",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v; self:LockUnlockFocusAnchor(v) end,
                     },
                     bFocusShown = {
@@ -224,24 +220,7 @@ function addon:OnInitialize()
                         name = "Hide/Show focus bar",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v; self.wFocus:Show(v) end,
-                    },
-                    nFocusOpacity = {
-                        order = 5,
-                        name = "Focus opacity",
-                        type = "range",
-                        min = 0,
-                        max = 1,
-                        step = 0.01,
-                        width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v;
-                            local r,g,b = unpack(self.db.profile.focusBarColor)
-                            self.wFocus:FindChild("FocusProgress"):SetBarColor(CColor.new(r,g,b,v))
-                            r,g,b = unpack(self.db.profile.focusBarBackgroundColor)
-                            self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,v))
-                        end,
                     },
                     focusBarColor = {
                         order = 10,
@@ -249,7 +228,7 @@ function addon:OnInitialize()
                         type = "color",
                         hasAlpha = true,
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
-                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetBarColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity)) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetBarColor(CColor.new(r,g,b,a)) end,
                     },
                     focusBarBackgroundColor = {
                         order = 20,
@@ -257,7 +236,7 @@ function addon:OnInitialize()
                         type = "color",
                         hasAlpha = true,
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
-                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity)) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,a)) end,
                     },
                     -- Focus font and text options
                     focusTextColor = {
@@ -275,7 +254,6 @@ function addon:OnInitialize()
                       type = "select",
                       values = tMyFontTable,
                       style = "dropdown",
-                      get = function(info) return self.db.profile[info[#info]] end,
                       set = function(info, v) self.db.profile[info[#info]] = v; self.wFocus:FindChild("FocusProgress"):SetFont(tMyFontTable[v]) end,
                     },
                     focusTextStyle = {
@@ -285,8 +263,6 @@ function addon:OnInitialize()
                       type = "select",
                       values = tFocusTextStyle,
                       style = "dropdown",
-                      get = function(info) return self.db.profile[info[#info]] end,
-                      set = function(info, v) self.db.profile[info[#info]] = v end,
                     },
                     -- Focus bar color options
                     reactiveFocusColorsHeader = {
@@ -704,17 +680,6 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         name = "Concentrated blade bar color options",
                         type = "header",
                     },
-                    nCBOpacity = {
-                        order = 60,
-                        name = "Concentrated blade bar opacity",
-                        type = "range",
-                        min = 0,
-                        max = 1,
-                        step = 0.01,
-                        width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:SetCBBarColors() end,
-                    },
                     CBBarColor = {
                         order = 70,
                         name = "Fill color",
@@ -884,7 +849,6 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         name = "Show mind burst telegraph assist",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v
                             if v then
                                 self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
@@ -919,7 +883,6 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         max = 1,
                         step = 0.01,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v
                             local r,g,b = unpack(self.db.profile.MBAssistColor)
                             self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,v))
@@ -933,7 +896,6 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         max = 50,
                         step = 1,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v
                             self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
                             self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, v)
@@ -949,7 +911,6 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         max = 20,
                         step = 1,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v
                             self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
                             self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, v)
@@ -963,6 +924,10 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         desc = "Use only one color for mind burst telegraph assist, if this is off then the dots will be colored based on your psi point color settings.",
                         type = "toggle",
                         width = "full",
+                        set = function(info, v) self.db.profile[info[#info]] = v
+                            local r,g,b = unpack(self.db.profile.MBAssistColor)
+                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
+                        end,
                     },
                     MBAssistColor = {
                         width = "full",
@@ -970,7 +935,6 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         name = "Color for mind burst assist",
                         disabled = function() return not self.db.profile.bSimpleColorMBAssist end,
                         type = "color",
-                        hasAlpha = true,
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}
                             self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
@@ -1016,10 +980,10 @@ function addon:OnEnable()
 
     self.wFocus = Apollo.LoadForm("EsperPP.xml", "Focus", nil, self)
     self.wFocus:Show(true)
-    local r,g,b = unpack(self.db.profile.focusBarColor)
-    self.wFocus:FindChild("FocusProgress"):SetBarColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
-    r,b,g = unpack(self.db.profile.focusBarBackgroundColor)
-    self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+    local r,g,b,a = unpack(self.db.profile.focusBarColor)
+    self.wFocus:FindChild("FocusProgress"):SetBarColor(CColor.new(r,g,b,a))
+    r,b,g,a = unpack(self.db.profile.focusBarBackgroundColor)
+    self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,a))
     self.wFocus:FindChild("FocusProgress"):SetTextColor(CColor.new(unpack(self.db.profile.focusTextColor)))
     self.wFocus:FindChild("FocusProgress"):SetFont(tMyFontTable[self.db.profile.focusFont] or "CRB_Interface14_BO")
 
@@ -1041,7 +1005,7 @@ function addon:OnEnable()
     self.nMBRange = 25+1/math.cos(math.rad(self.nMBDegree))
 
     self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
-    local r,g,b = unpack(self.db.profile.MBAssistColor)
+    r,g,b = unpack(self.db.profile.MBAssistColor)
     self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
 
     Apollo.RegisterEventHandler("AbilityBookChange", "OnAbilityBookChange", self)
@@ -1292,19 +1256,19 @@ function addon:NotSoFastTimer()
         bar:SetProgress(nCurr)
         bar:SetText(formatFocusText(self.db.profile.focusTextStyle, nCurr, nMax))
         if self.db.profile.bReactiveFocusColor then
-            local r,g,b
+            local r,g,b,a
             if ((nCurr / nMax) <= 0.25) then -- Reactive Color Change on Focus Loss
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorBelow25Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+                r,g,b,a = unpack(self.db.profile.reactiveFocusBarColorBelow25Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,a))
             elseif ((nCurr / nMax) <= 0.50) then
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver25Below50Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+                r,g,b,a = unpack(self.db.profile.reactiveFocusBarColorOver25Below50Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,a))
             elseif ((nCurr / nMax) <= 0.75) then
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver50Below75Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+                r,g,b,a = unpack(self.db.profile.reactiveFocusBarColorOver50Below75Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,a))
             else
-                r,g,b = unpack(self.db.profile.reactiveFocusBarColorOver75Percent)
-                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,self.db.profile.nFocusOpacity))
+                r,g,b,a = unpack(self.db.profile.reactiveFocusBarColorOver75Percent)
+                self.wFocus:FindChild("FocusProgress"):SetBGColor(CColor.new(r,g,b,a))
             end
         end
     end
@@ -1413,7 +1377,14 @@ function addon:OnUpdate()
                             self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
                         end
                         if not self.db.profile.bSimpleColorMBAssist then
-                            self.tMarkers[nMBAbilityId][nCounter][i]:SetBGColor(uPlayer:IsInCombat() and CColor.new(unpack(self.db.profile["ppColor"..nPP])) or CColor.new(unpack(self.db.profile.ppColorOOC)))
+                            local a = self.db.profile.nMindBurstOpacity
+                            local r,g,b
+                            if uPlayer:IsInCombat() then
+                                r,g,b = unpack(self.db.profile["ppColor"..nPP])
+                            else
+                                r,g,b = unpack(self.db.profile.ppColorOOC)
+                            end
+                            self.tMarkers[nMBAbilityId][nCounter][i]:SetBGColor(CColor.new(r,g,b,a))
                         end
                         self.tMarkers[nMBAbilityId][nCounter][i]:Show(true)
                     end
@@ -1431,10 +1402,10 @@ function addon:SetCBBarColors()
     local db = self.db.profile
     for i=1, 3 do
         local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
-        local r,g,b = unpack(db.CBBarColor)
-        bar:SetBarColor(CColor.new(r,g,b,db.nCBOpacity))
-        r,g,b = unpack(db.CBBarBackgroundColor)
-        bar:SetBGColor(CColor.new(r,g,b,db.nCBOpacity))
+        local r,g,b,a = unpack(db.CBBarColor)
+        bar:SetBarColor(CColor.new(r,g,b,a))
+        r,g,b,a = unpack(db.CBBarBackgroundColor)
+        bar:SetBGColor(CColor.new(r,g,b,a))
     end
 end
 
