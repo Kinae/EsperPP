@@ -14,14 +14,9 @@
 
         texture picker for focus/CB bar
 
-        apparently BuffContainerWindow is the culprit for a lot of the stacking performance issues so probably should make togging it on and off actually destroy/recreate the window
-
-        font and size selector for the main PP display
-            with offsets for positioning if necessary
-
 ]]--
 
-local sVersion = "9.1.0.116"
+local sVersion = "9.1.0.117"
 
 require "Window"
 require "GameLib"
@@ -94,6 +89,12 @@ local defaults = {
         ppColor4 = {1,0.96,0,1},
         ppColor5 = {0.78,0,0.16,1},
         ppColorOOC = {0.13,0.76,0.44,1},
+        nPPScale = 1,
+        psiPointFont = 116,
+        nLOffset = -59,
+        nTOffset = -96,
+        nROffset = -10,
+        nBOffset = -44,
         bShowCB = true,
         bShowPsiCharge = true,
         bShowPsiChargeAnchor = true,
@@ -444,6 +445,72 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
                     },
+
+                    psiPointSizeHeader = {
+                        order = 61,
+                        name = "Psi point size",
+                        type = "header",
+                    },
+                    psiPointSizeDesc = {
+                        order = 62,
+                        name = [[The easiest way to change the display size is with the slider for scale. However this might make the text look ugly. Alternatively you could leave the scale on 1 and just change the font from the dropout then you might need to change anchor offsets if necessary.
+ 
+It might be a good idea to toggle "Show 0 psi point" while testing different fonts.
+]],
+                        type = "description",
+                    },
+                    nPPScale = {
+                        order = 63,
+                        name = "Psi point display scale",
+                        type = "range",
+                        min = 0.5,
+                        max = 5,
+                        step = 0.05,
+                        width = "full",
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                    },
+                    psiPointFont = {
+                      order = 64,
+                      width = "full",
+                      name = "Font style",
+                      type = "select",
+                      values = tMyFontTable,
+                      style = "dropdown",
+                      set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                    },
+                    nLOffset = {
+                        order = 65,
+                        name = "Left offset",
+                        type = "input",
+                        usage = "Number expected.",
+                        pattern = "%d+",
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                    },
+                    nTOffset = {
+                        order = 66,
+                        name = "Top offset",
+                        type = "input",
+                        usage = "Number expected.",
+                        pattern = "%d+",
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                    },
+                    nROffset = {
+                        order = 67,
+                        name = "Right offset",
+                        type = "input",
+                        usage = "Number expected.",
+                        pattern = "%d+",
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                    },
+                    nBOffset = {
+                        order = 68,
+                        name = "Bottom offset",
+                        type = "input",
+                        usage = "Number expected.",
+                        pattern = "%d+",
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                    },
+
                     psiPointSoundHeader = {
                         order = 70,
                         name = "Psi point sound options",
@@ -864,8 +931,7 @@ function addon:OnEnable()
     self.nLastPP = 0
 
     self.wAnchor = Apollo.LoadForm("EsperPP.xml", "Anchor", nil, self)
-    self.wDisplay = Apollo.LoadForm("EsperPP.xml", "Display", nil, self)
-    self.wDisplay:Show(true)
+    self:RecreatePPDisplay()
 
     self.tMarkers = {}
 
@@ -912,7 +978,7 @@ function addon:OnEnable()
     self.wFocus:Show(self.db.profile.bFocusShown)
 
 
-    --Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    -- Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
@@ -1253,6 +1319,30 @@ end
 -----------------------------------------------------------------------------------------------
 -- Window management
 -----------------------------------------------------------------------------------------------
+
+do
+    local tDisplayDef = {
+        -- window def will go here when I'm ready to completely switch to GeminiGUI
+    }
+
+    -- we recreate from scratch because this way I only have to edit code at one place rather than multiple because of the options and initialization
+    function addon:RecreatePPDisplay()
+        -- destroy stuff
+        if self.wDisplay then self.wDisplay:Destroy() end
+
+        -- create the display
+        self.wDisplay = Apollo.LoadForm("EsperPP.xml", "Display", nil, self)
+        self.wDisplay:Show(true)
+
+        -- apply db settings to the GeminiGUI window def
+        local db = self.db.profile
+        self.wDisplay:SetScale(db.nPPScale)
+        self.wDisplay:FindChild("Text"):SetFont(tMyFontTable[db.psiPointFont])
+        self.wDisplay:FindChild("Text"):SetAnchorOffsets(db.nLOffset, db.nTOffset, db.nROffset, db.nBOffset)
+
+        self:RepositionDisplay()
+    end
+end
 
 function addon:LockUnlock(bValue)
     self.db.profile.bShowPPAnchor = bValue
