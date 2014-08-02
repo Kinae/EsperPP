@@ -5,18 +5,16 @@
 
 --[[
     TODO:
-        more CB customization
         move EVERYTHING to GeminiGUI
         localization
         move options to it's own file
 
         GeminiConfig:
 
-        texture picker for focus/CB bar
-
+        bar texture picker for focus/CB bar
 ]]--
 
-local sVersion = "9.1.0.117"
+local sVersion = "9.1.0.118"
 
 require "Window"
 require "GameLib"
@@ -96,6 +94,12 @@ local defaults = {
         nROffset = -10,
         nBOffset = -44,
         bShowCB = true,
+        nCBWidth = 94,
+        nCBHeight = 10,
+        nCBPadding = 1,
+        CBBarColor = {0.20,0.64,0.67,1},
+        CBBarBackgroundColor = {0.03,0.05,0.07,1},
+        nCBOpacity = 0.7,
         bShowPsiCharge = true,
         bShowPsiChargeAnchor = true,
         nPsiChargeScale = 3.5,
@@ -360,7 +364,6 @@ function addon:OnInitialize()
                         desc = "Show the psi point anchor.",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v;  self.wAnchor:Show(v) end,
                     },
                     bShow0pp = {
@@ -632,7 +635,103 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         name = "Show concentrated blade timers",
                         type = "toggle",
                         width = "full",
+                        set = function(info, v)
+                            self.db.profile[info[#info]] = v
+                            if not v then
+                                self.db.profile.bShowCBTestBars = v
+                                self:ShowCBTestBars(v)
+                                for i=1, 3 do
+                                    local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
+                                    if self.tCBTracker[i] then
+                                        bar:Show(true)
+                                        bar:SetMax(self.tCBTracker[i].nEndTime-self.tCBTracker[i].nStartTime)
+                                        bar:SetProgress(self.nMyTime-self.tCBTracker[i].nStartTime)
+                                    else
+                                        bar:Show(false)
+                                    end
+                                end
+                            end
+                        end,
                     },
+                    bShowCBAnchor = {
+                        order = 2,
+                        name = "Show concentrated blade anchor",
+                        type = "toggle",
+                        width = "full",
+                        set = function(info, v) self.db.profile[info[#info]] = v;  self.wCBAnchor:Show(v) end,
+                    },
+
+                    bShowCBTestBars = {
+                        order = 10,
+                        name = "Shows some test bars to help setup",
+                        type = "toggle",
+                        width = "full",
+                        disabled = function() return not self.db.profile.bShowCB end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:ShowCBTestBars(v) end,
+                    },
+                    nCBWidth = {
+                        order = 20,
+                        name = "Bar width",
+                        type = "range",
+                        width = "full",
+                        min = 0,
+                        max = 1000,
+                        step = 1,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreateCBDisplay() end,
+                    },
+                    nCBHeight = {
+                        order = 30,
+                        name = "Bar height",
+                        type = "range",
+                        width = "full",
+                        min = 0,
+                        max = 1000,
+                        step = 1,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreateCBDisplay() end,
+                    },
+                    nCBPadding = {
+                        order = 40,
+                        name = "Bar padding (distance between bars)",
+                        type = "range",
+                        width = "full",
+                        min = 0,
+                        max = 100,
+                        step = 1,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreateCBDisplay() end,
+                    },
+                    concentratedBladeColoringHeader = {
+                        order = 50,
+                        name = "Concentrated blade bar color options",
+                        type = "header",
+                    },
+                    nCBOpacity = {
+                        order = 60,
+                        name = "Concentrated blade bar opacity",
+                        type = "range",
+                        min = 0,
+                        max = 1,
+                        step = 0.01,
+                        width = "full",
+                        get = function(info) return self.db.profile[info[#info]] end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:SetCBBarColors() end,
+                    },
+                    CBBarColor = {
+                        order = 70,
+                        name = "Fill color",
+                        type = "color",
+                        hasAlpha = true,
+                        get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self:SetCBBarColors() end,
+                    },
+                    CBBarBackgroundColor = {
+                        order = 80,
+                        name = "Background color",
+                        type = "color",
+                        hasAlpha = true,
+                        get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self:SetCBBarColors() end,
+                    },
+
                     GeminiConfigScrollingFrameBottomWidgetFix = {
                         order = 9999,
                         name = "",
@@ -673,7 +772,6 @@ If you messed with the settings but could not quite get it the way you wanted, t
                         name = "Show psi charge anchor",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v; self:HideShowPsiChargeContainer(v) end,
                     },
                     bShowPsiCharge = {
@@ -681,7 +779,6 @@ If you messed with the settings but could not quite get it the way you wanted, t
                         name = "Show psi charge tracker",
                         type = "toggle",
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v; self:TogglePsichargeTracker(v) end,
                     },
                     nPsiChargeScale = {
@@ -692,7 +789,6 @@ If you messed with the settings but could not quite get it the way you wanted, t
                         max = 6,
                         step = 0.1,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v;
                             if self.wBuffBar then
                                 self.wBuffBar:SetScale(v)
@@ -716,7 +812,6 @@ If you messed with the settings but could not quite get it the way you wanted, t
                         max = 1,
                         step = 0.01,
                         width = "full",
-                        get = function(info) return self.db.profile[info[#info]] end,
                         set = function(info, v) self.db.profile[info[#info]] = v;
                             if self.wBuffBar then
                                 self.wBuffBar:SetOpacity(v)
@@ -933,6 +1028,12 @@ function addon:OnEnable()
     self.wAnchor = Apollo.LoadForm("EsperPP.xml", "Anchor", nil, self)
     self:RecreatePPDisplay()
 
+    self.wCBAnchor = Apollo.LoadForm("EsperPP.xml", "CBAnchor", nil, self)
+    self:RecreateCBDisplay()
+    if self.db.profile.bShowCBTestBars then
+        self:ShowCBTestBars(true)
+    end
+
     self.tMarkers = {}
 
     self.bMBonLAS = nil
@@ -968,6 +1069,14 @@ function addon:OnEnable()
     end
     self.wAnchor:Show(self.db.profile.bShowPPAnchor)
 
+    if self.db.profile.tCBPos then
+        if self.db.profile.tCBPos.anchor and #self.db.profile.tCBPos.anchor > 0 then
+            self.wCBAnchor:SetAnchorOffsets(unpack(self.db.profile.tCBPos.anchor))
+            self:RepositionCBDisplay()
+        end
+    end
+    self.wCBAnchor:Show(self.db.profile.bShowCBAnchor)
+
     self.wFocus:FindChild("Header"):Show(self.db.profile.bShowFocusAnchor)
     self.wFocus:SetStyle("Moveable", self.db.profile.bShowFocusAnchor)
     self.wFocus:SetStyle("Sizable", self.db.profile.bShowFocusAnchor)
@@ -978,7 +1087,7 @@ function addon:OnEnable()
     self.wFocus:Show(self.db.profile.bFocusShown)
 
 
-    -- Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
@@ -1154,8 +1263,6 @@ function addon:FastTimer()
         if tChargeData.nChargesRemaining < self.tCBChargeData.nChargesRemaining then
             local tTrackingData = {}
             tTrackingData.nStartTime = self.nMyTime
-            -- tier 4 or higher so it hits after 3.4 sec not 4.4
-            -- XXX FIX THIS
             tTrackingData.nEndTime = self.nMyTime+3
 
             self.tCBTracker[#self.tCBTracker+1] = tTrackingData
@@ -1163,7 +1270,7 @@ function addon:FastTimer()
         self.tCBChargeData = tChargeData
 
         for i=1, 3 do
-            local bar = self.wDisplay:FindChild(("ProgressBar%d"):format(i))
+            local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
             if self.tCBTracker[i] then
                 bar:Show(true)
                 bar:SetMax(self.tCBTracker[i].nEndTime-self.tCBTracker[i].nStartTime)
@@ -1320,6 +1427,43 @@ end
 -- Window management
 -----------------------------------------------------------------------------------------------
 
+function addon:SetCBBarColors()
+    local db = self.db.profile
+    for i=1, 3 do
+        local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
+        local r,g,b = unpack(db.CBBarColor)
+        bar:SetBarColor(CColor.new(r,g,b,db.nCBOpacity))
+        r,g,b = unpack(db.CBBarBackgroundColor)
+        bar:SetBGColor(CColor.new(r,g,b,db.nCBOpacity))
+    end
+end
+
+local function startCBTestBars()
+    if not addon.nMyTime then return end
+    for i = 1, 3 do
+       local tTrackingData = {}
+       tTrackingData.nStartTime = addon.nMyTime
+       tTrackingData.nEndTime = addon.nMyTime+3
+
+       addon.tCBTracker[#addon.tCBTracker+1] = tTrackingData
+    end
+end
+
+function addon:ShowCBTestBars(bShow)
+    if bShow then
+        startCBTestBars()
+        if not self.CBTestTimer then
+            self.CBTestTimer = self:ScheduleRepeatingTimer(startCBTestBars, 3)
+        end
+    else
+        if self.CBTestTimer then
+            self.tCBTracker = {}
+            self:CancelTimer(self.CBTestTimer)
+            self.CBTestTimer = nil
+        end
+    end
+end
+
 do
     local tDisplayDef = {
         -- window def will go here when I'm ready to completely switch to GeminiGUI
@@ -1344,9 +1488,37 @@ do
     end
 end
 
+do
+    local tCBDisplayDef = {
+        -- window def will go here when I'm ready to completely switch to GeminiGUI
+    }
+
+    function addon:RecreateCBDisplay()
+        -- destroy stuff
+        if self.wCBDisplay then self.wCBDisplay:Destroy() end
+
+        -- create the display
+        self.wCBDisplay = Apollo.LoadForm("EsperPP.xml", "CBDisplay", nil, self)
+        self.wCBDisplay:Show(true)
+
+        -- apply db settings to the GeminiGUI window def
+        self:RepositionCBDisplay()
+        local db = self.db.profile
+        for i=1, 3 do
+            local wCBBar = Apollo.LoadForm("EsperPP.xml", "CBProgressBar", self.wCBDisplay, self)
+            wCBBar:SetName(("CBProgressBar%d"):format(i))
+            wCBBar:SetAnchorOffsets(0,(i-1)*db.nCBHeight+(i-1)*db.nCBPadding,0,i*db.nCBHeight+(i-1)*db.nCBPadding)
+        end
+        self:SetCBBarColors()
+    end
+end
+
 function addon:LockUnlock(bValue)
     self.db.profile.bShowPPAnchor = bValue
     self.wAnchor:Show(bValue)
+
+    self.db.profile.bShowCBAnchor = bValue
+    self.wCBAnchor:Show(bValue)
 
     self.db.profile.bShowPsiChargeAnchor = bValue
     self:HideShowPsiChargeContainer(bValue)
@@ -1364,10 +1536,28 @@ function addon:RepositionDisplay()
     self.wDisplay:SetAnchorOffsets(l, b, l+94, b+111) -- This has to be updated if the frame is resized in houston ( or probably should look into move to position or something)
 end
 
+function addon:RepositionCBDisplay()
+    local db = self.db.profile
+    local l,t,r,b = self.wCBAnchor:GetAnchorOffsets()
+    self.wCBDisplay:SetAnchorOffsets(l,b,l+db.nCBWidth,b+db.nCBHeight*3+db.nCBPadding*2)
+end
+
 function addon:OnAnchorMove(wHandler)
     local l,t,r,b = self.wAnchor:GetAnchorOffsets()
+    if not self.db.profile.tPos then
+        self.db.profile.tPos = {}
+    end
     self.db.profile.tPos.anchor = {l,t,r,b}
     self:RepositionDisplay()
+end
+
+function addon:OnCBAnchorMove(wHandler)
+    local l,t,r,b = self.wCBAnchor:GetAnchorOffsets()
+    if not self.db.profile.tCBPos then
+        self.db.profile.tCBPos = {}
+    end
+    self.db.profile.tCBPos.anchor = {l,t,r,b}
+    self:RepositionCBDisplay()
 end
 
 function addon:FocusMoveOrScale()
