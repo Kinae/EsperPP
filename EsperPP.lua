@@ -11,11 +11,9 @@
         move options to it's own file
 
         bar texture picker for focus/CB bar -- this will probably have to wait for some shared media support
-
-        properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.128"
+local sVersion = "9.1.0.129"
 
 require "Window"
 require "GameLib"
@@ -1214,8 +1212,13 @@ function addon:DelayedAbilityBookCheck()
     end
     if nMBSpellId then
         self.bMBonLAS = true
+        self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
+        self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
+        local r,g,b = unpack(self.db.profile.MBAssistColor)
+        self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
     else
         self.bMBonLAS = nil
+        self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
     end
 end
 
