@@ -10,12 +10,12 @@
         localization
         move options to it's own file
 
-        GeminiConfig:
+        bar texture picker for focus/CB bar -- this will probably have to wait for some shared media support
 
-        bar texture picker for focus/CB bar
+        properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.120"
+local sVersion = "9.1.0.122"
 
 require "Window"
 require "GameLib"
@@ -88,7 +88,7 @@ local defaults = {
         ppColor5 = {0.78,0,0.16,1},
         ppColorOOC = {0.13,0.76,0.44,0.7},
         nPPScale = 1,
-        psiPointFont = 116,
+        psiPointFont = 116, -- Subtitle
         nLOffset = -59,
         nTOffset = -96,
         nROffset = -10,
@@ -277,7 +277,6 @@ function addon:OnInitialize()
                         desc = "Color the focus bar's background based on how much focus you have currently.",
                         type = "toggle",
                         width = "full",
-
                     },
                     reactiveFocusBarColorOver75Percent = {
                         width = "full",
@@ -425,7 +424,6 @@ function addon:OnInitialize()
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
                     },
-
                     psiPointSizeHeader = {
                         order = 61,
                         name = "Psi point size",
@@ -529,7 +527,6 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                             ["Sounds/DING.wav"] = "Ding",
                         },
                         style = "dropdown",
-
                     },
                     psiPointSoundTest = {
                         order = 100,
@@ -614,6 +611,7 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         width = "full",
                         set = function(info, v)
                             self.db.profile[info[#info]] = v
+                            self:ToggleCBTrackerTimer(v)
                             if not v then
                                 self.db.profile.bShowCBTestBars = v
                                 self:ShowCBTestBars(v)
@@ -697,7 +695,6 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
                         set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}; self:SetCBBarColors() end,
                     },
-
                     GeminiConfigScrollingFrameBottomWidgetFix = {
                         order = 9999,
                         name = "",
@@ -1016,10 +1013,12 @@ function addon:OnEnable()
     self.tCBChargeData = nil
     self.tCBTracker = {}
 
-    -- Gemini timers can't be faster than 0.1 so we use apollo timers, for stuff that needs to be done fast but not quite as NextFrame fast
     self.nMyTime = os.clock()
+    -- Gemini timers can't be faster than 0.1 so we use apollo timers, for stuff that needs to be done fast but not quite as NextFrame fast
     Apollo.CreateTimer("FastTimer", 0.033)
     Apollo.RegisterTimerHandler("FastTimer", "FastTimer", self)
+    Apollo.StopTimer("FastTimer")
+    self:ToggleCBTrackerTimer(self.db.profile.bShowCB)
 
     -- For stuff like focus that does not really need very fast update
     self.fastTimer = self:ScheduleRepeatingTimer("NotSoFastTimer", 0.2)
@@ -1052,7 +1051,7 @@ function addon:OnEnable()
     self.wFocus:Show(self.db.profile.bFocusShown)
 
 
-    Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
+    -- Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
 
 -----------------------------------------------------------------------------------------------
@@ -1553,8 +1552,8 @@ function addon:HideFocus()
     self.db.profile.bFocusShown = false
 end
 
-function addon:TogglePsichargeTracker(bEnabled)
-    if bEnabled then
+function addon:TogglePsichargeTracker(bEnable)
+    if bEnable then
         if not self.buffUpdaterTimer then
             self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
             self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
@@ -1568,6 +1567,14 @@ function addon:TogglePsichargeTracker(bEnabled)
             self.buffUpdaterTimer = nil
             self.wBuffBar:Destroy()
         end
+    end
+end
+
+function addon:ToggleCBTrackerTimer(bEnable)
+    if bEnable then
+        Apollo.StartTimer("FastTimer")
+    else
+        Apollo.StopTimer("FastTimer")
     end
 end
 
