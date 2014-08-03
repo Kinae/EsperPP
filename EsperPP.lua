@@ -15,7 +15,7 @@
         properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.127"
+local sVersion = "9.1.0.128"
 
 require "Window"
 require "GameLib"
@@ -128,7 +128,8 @@ local defaults = {
 -----------------------------------------------------------------------------------------------
 
 local tMyFontTable = {}
-for _,font in ipairs(Apollo.GetGameFonts()) do
+for nIndex,font in ipairs(Apollo.GetGameFonts()) do
+    -- use this format in case we decide to go back to using nIndex then won't have to change so much again
     tMyFontTable[font.name] = font.name
 end
 
