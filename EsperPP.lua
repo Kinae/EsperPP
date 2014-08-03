@@ -15,7 +15,7 @@
         properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.123"
+local sVersion = "9.1.0.124"
 
 require "Window"
 require "GameLib"
@@ -1256,6 +1256,7 @@ function addon:FastTimer()
 end
 
 function addon:NotSoFastTimer()
+    uPlayer = GameLib.GetPlayerUnit() -- uPlayer is local for the file, because we use it multiple timers
     if not uPlayer then return end
     -- Focus display
     if self.wFocus and self.wFocus:IsShown() then
@@ -1309,12 +1310,9 @@ function addon:BuffBarFilterUpdater()
 end
 
 function addon:OnUpdate()
-    uPlayer = GameLib.GetPlayerUnit() -- uPlayer is local for the file, because we use it multiple timers
     if not uPlayer then return end
-    if uPlayer:GetClassId() ~= GameLib.CodeEnumClass.Esper then self.wDisplay:Show(false) self.wAnchor:Show(false) return end -- not esper
 
     -- PP tracking
-    self.wDisplay:Show(true)
     local nPP = uPlayer:GetResource(1)
     if self.nLastPP ~= nPP then -- PP changed
         -- do the sound stuff
@@ -1323,10 +1321,10 @@ function addon:OnUpdate()
         end
         self.nLastPP = nPP
     end
-    self.wDisplay:FindChild("Text"):SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
+    local wText = self.wDisplay:FindChild("Text")
+    wText:SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
+    wText:SetTextColor(uPlayer:IsInCombat() and CColor.new(unpack(self.db.profile["ppColor"..nPP])) or CColor.new(unpack(self.db.profile.ppColorOOC)))
     self.wDisplay:FindChild("Full"):Show((self.db.profile.bShowFullEffect and nPP == uPlayer:GetMaxResource(1)) and true or false)
-
-    self.wDisplay:FindChild("Text"):SetTextColor(uPlayer:IsInCombat() and CColor.new(unpack(self.db.profile["ppColor"..nPP])) or CColor.new(unpack(self.db.profile.ppColorOOC)))
 
 
     -- T8 builder stack tracking
