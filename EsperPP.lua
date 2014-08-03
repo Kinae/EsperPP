@@ -15,7 +15,7 @@
         properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.126"
+local sVersion = "9.1.0.127"
 
 require "Window"
 require "GameLib"
@@ -70,7 +70,7 @@ local defaults = {
         tFocusPos = {},
         focusBarColor = {0.13,0.76,0.44,0.7},
         focusBarBackgroundColor = {0.78,0,0.16,0.7},
-        focusFont = 73, -- CRB_Interface14_BO
+        focusFont = "CRB_Interface14_BO",
         focusTextStyle = "def",
         focusTextColor = {1,1,1,1},
         bShowFocusAnchor = true,
@@ -89,7 +89,7 @@ local defaults = {
         ppColor5 = {0.78,0,0.16,1},
         ppColorOOC = {0.13,0.76,0.44,0.7},
         nPPScale = 1,
-        psiPointFont = 116, -- Subtitle
+        psiPointFont = "Subtitle",
         nLOffset = -59,
         nTOffset = -96,
         nROffset = -10,
@@ -128,8 +128,8 @@ local defaults = {
 -----------------------------------------------------------------------------------------------
 
 local tMyFontTable = {}
-for nIndex,font in ipairs(Apollo.GetGameFonts()) do
-    tMyFontTable[nIndex] = font.name
+for _,font in ipairs(Apollo.GetGameFonts()) do
+    tMyFontTable[font.name] = font.name
 end
 
 local tFocusTextStyle = {
