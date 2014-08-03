@@ -13,7 +13,7 @@
         bar texture picker for focus/CB bar -- this will probably have to wait for some shared media support
 ]]--
 
-local sVersion = "9.1.0.129"
+local sVersion = "9.1.0.130"
 
 require "Window"
 require "GameLib"
