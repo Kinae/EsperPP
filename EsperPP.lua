@@ -15,7 +15,7 @@
         properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.124"
+local sVersion = "9.1.0.125"
 
 require "Window"
 require "GameLib"
@@ -1314,12 +1314,14 @@ function addon:OnUpdate()
 
     -- PP tracking
     local nPP = uPlayer:GetResource(1)
+    local bPPChanged = false
     if self.nLastPP ~= nPP then -- PP changed
         -- do the sound stuff
         if self.db.profile.bPlaySoundForPsiPoint and self.db.profile.nPlaySoundForPsiPoint == nPP then
             self:PlayPPSound()
         end
         self.nLastPP = nPP
+        bPPChanged = true
     end
     local wText = self.wDisplay:FindChild("Text")
     wText:SetText((self.db.profile.bShow0pp or nPP > 0) and nPP or "")
@@ -1383,7 +1385,7 @@ function addon:OnUpdate()
                             local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nMBAbilityId][nCounter]-1)) * (i-1))
                             self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
                         end
-                        if not self.db.profile.bSimpleColorMBAssist then
+                        if not self.db.profile.bSimpleColorMBAssist and bPPChanged then
                             local a = self.db.profile.nMindBurstOpacity
                             local r,g,b
                             if uPlayer:IsInCombat() then
