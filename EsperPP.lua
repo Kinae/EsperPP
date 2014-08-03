@@ -15,7 +15,7 @@
         properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.125"
+local sVersion = "9.1.0.126"
 
 require "Window"
 require "GameLib"
@@ -29,6 +29,7 @@ require "Sound"
 -----------------------------------------------------------------------------------------------
 local setmetatable = setmetatable
 local tonumber = tonumber
+local tostring = tostring
 local string = string
 local ipairs = ipairs
 local table = table
@@ -462,7 +463,8 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         type = "input",
                         usage = "Number expected.",
                         pattern = "%d+",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                        get = function(info) return tostring(self.db.profile[info[#info]]) end,
+                        set = function(info, v) self.db.profile[info[#info]] = tonumber(v); self:RecreatePPDisplay() end,
                     },
                     nTOffset = {
                         order = 66,
@@ -470,7 +472,8 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         type = "input",
                         usage = "Number expected.",
                         pattern = "%d+",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                        get = function(info) return tostring(self.db.profile[info[#info]]) end,
+                        set = function(info, v) self.db.profile[info[#info]] = tonumber(v); self:RecreatePPDisplay() end,
                     },
                     nROffset = {
                         order = 67,
@@ -478,7 +481,8 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         type = "input",
                         usage = "Number expected.",
                         pattern = "%d+",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                        get = function(info) return tostring(self.db.profile[info[#info]]) end,
+                        set = function(info, v) self.db.profile[info[#info]] = tonumber(v); self:RecreatePPDisplay() end,
                     },
                     nBOffset = {
                         order = 68,
@@ -486,7 +490,8 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         type = "input",
                         usage = "Number expected.",
                         pattern = "%d+",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:RecreatePPDisplay() end,
+                        get = function(info) return tostring(self.db.profile[info[#info]]) end,
+                        set = function(info, v) self.db.profile[info[#info]] = tonumber(v); self:RecreatePPDisplay() end,
                     },
 
                     psiPointSoundHeader = {
