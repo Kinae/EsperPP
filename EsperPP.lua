@@ -15,7 +15,7 @@
         properly toggle CB tracking
 ]]--
 
-local sVersion = "9.1.0.122"
+local sVersion = "9.1.0.123"
 
 require "Window"
 require "GameLib"
@@ -1018,6 +1018,7 @@ function addon:OnEnable()
     Apollo.CreateTimer("FastTimer", 0.033)
     Apollo.RegisterTimerHandler("FastTimer", "FastTimer", self)
     Apollo.StopTimer("FastTimer")
+    self.CBTimerRunning = false
     self:ToggleCBTrackerTimer(self.db.profile.bShowCB)
 
     -- For stuff like focus that does not really need very fast update
@@ -1188,13 +1189,21 @@ function addon:DelayedAbilityBookCheck()
         self.splCB = GameLib.GetSpell(nCBSpellId)
         if self.splCB then
             self.tCBChargeData = self.splCB:GetAbilityCharges()
+            if not self.CBTimerRunning and self.db.profile.bShowCB then
+                Apollo.StartTimer("FastTimer")
+                self.CBTimerRunning = true
+            end
         end
     else
         self.splCB = nil
         self.tCBChargeData = nil
         for i=1, 3 do
-            local bar = self.wDisplay:FindChild(("ProgressBar%d"):format(i))
+            local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
             bar:Show(false)
+        end
+        if self.CBTimerRunning and self.db.profile.bShowCB then
+            Apollo.StopTimer("FastTimer")
+            self.CBTimerRunning = false
         end
     end
     if nMBSpellId then
@@ -1571,10 +1580,12 @@ function addon:TogglePsichargeTracker(bEnable)
 end
 
 function addon:ToggleCBTrackerTimer(bEnable)
-    if bEnable then
+    if bEnable and not self.CBTimerRunning then
         Apollo.StartTimer("FastTimer")
-    else
+        self.CBTimerRunning = bEnable
+    elseif not bEnable and self.CBTimerRunning then
         Apollo.StopTimer("FastTimer")
+        self.CBTimerRunning = bEnable
     end
 end
 
