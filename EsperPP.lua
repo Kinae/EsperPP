@@ -11,9 +11,11 @@
         move options to it's own file
 
         bar texture picker for focus/CB bar -- this will probably have to wait for some shared media support
+
+        shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.130"
+local sVersion = "9.1.0.131"
 
 require "Window"
 require "GameLib"
@@ -1055,6 +1057,11 @@ function addon:OnEnable()
     end
     self.wFocus:Show(self.db.profile.bFocusShown)
 
+    -- we recreate the BuffContainerWindow after every 3 min ( or after 3 min when player leaves combat )
+    -- because apparently having it running too long eats FPS, but destroying and recreating it fixes FPS
+    self.nLastPsiChargeDebug = os.clock()
+    self.psiChargeDebugger = self:ScheduleRepeatingTimer("PsiChargeDebugger", 60)
+    Apollo.RegisterEventHandler("UnitEnteredCombat", "CombatStateChanged", self)
 
     -- Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
 end
@@ -1225,6 +1232,12 @@ end
 function addon:OnAbilityBookChange()
     -- have to do this because if you get ability list at this event then it will return what you had not what you have right now.
     self:ScheduleTimer("DelayedAbilityBookCheck", 0.2)
+end
+
+function addon:CombatStateChanged(unit, bInCombat)
+    if unit ~= uPlayer then return end
+
+    self:PsiChargeDebugger()
 end
 
 -----------------------------------------------------------------------------------------------
@@ -1585,6 +1598,15 @@ function addon:TogglePsichargeTracker(bEnable)
             self.buffUpdaterTimer = nil
             self.wBuffBar:Destroy()
         end
+    end
+end
+
+function addon:PsiChargeDebugger()
+    if not uPlayer then return end
+    if (os.clock() - self.nLastPsiChargeDebug) >= 300 and not uPlayer:IsInCombat() then
+        self:TogglePsichargeTracker(false)
+        self:TogglePsichargeTracker(true)
+        self.nLastPsiChargeDebug = os.clock()
     end
 end
 
