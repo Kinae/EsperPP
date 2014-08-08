@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.133"
+local sVersion = "9.1.0.134"
 
 require "Window"
 require "GameLib"
@@ -1596,7 +1596,9 @@ function addon:TogglePsichargeTracker(bEnable)
         if self.buffUpdaterTimer then
             self:CancelTimer(self.buffUpdaterTimer)
             self.buffUpdaterTimer = nil
-            self.wBuffBar:Destroy()
+            if self.wBuffBar then
+                self.wBuffBar:Destroy()
+            end
         end
     end
 end
