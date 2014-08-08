@@ -27,7 +27,7 @@ Espers.
 * Concentrated blade timer bars can be customized ( hight / width / color / opacity ).
 * Movable / sizable focus bar for the healers. You can also just hide it if you are a DPS.
 * Focus bar is colorable additionally there is a reactive option that allows you to set the background color of the focus bar based on how much percentage of focus you have left.
-* Psi Charge tracking: This is pretty ugly till Carbine fixes the API, please make sure you read the description in the options before widdling with the settings.
+* Psi Charge tracking: This is pretty ugly till Carbine fixes the API, please make sure you read the description in the options before widdling with the settings. This is also quite resource heavy since there is some bug with the BuffWindowContainer, so right now the frame is being often recreated to elliviate that. However some more aggressive methods might be required. Please report performance concenrs if you notice any.
 * Telegraph assist: show where the telegraph would be for the corresponding spell if it was cast on a flat surface. Currently supported spells:
 	* Mind Burst
 
