@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.132"
+local sVersion = "9.1.0.133"
 
 require "Window"
 require "GameLib"
@@ -1603,7 +1603,7 @@ end
 
 function addon:PsiChargeDebugger()
     if not uPlayer then return end
-    if (os.clock() - self.nLastPsiChargeDebug) >= 300 and not uPlayer:IsInCombat() then
+    if (os.clock() - self.nLastPsiChargeDebug) >= 300 and not uPlayer:IsInCombat() and self.db.profile.bShowPsiCharge then
         self:TogglePsichargeTracker(false)
         self:TogglePsichargeTracker(true)
         self.nLastPsiChargeDebug = os.clock()
