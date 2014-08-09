@@ -14,9 +14,11 @@
 
         shockwave circle that only shows when CD is about to be ready and only during combat
         try and use lines for MB assist
+
+        PACKAGE ME PLX$
 ]]--
 
-local sVersion = "9.1.0.135"
+local sVersion = "9.1.0.136"
 
 require "Window"
 require "GameLib"
