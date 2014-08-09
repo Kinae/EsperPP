@@ -13,9 +13,10 @@
         bar texture picker for focus/CB bar -- this will probably have to wait for some shared media support
 
         shockwave circle that only shows when CD is about to be ready and only during combat
+        try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.134"
+local sVersion = "9.1.0.135"
 
 require "Window"
 require "GameLib"
