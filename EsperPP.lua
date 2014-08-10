@@ -14,11 +14,9 @@
 
         shockwave circle that only shows when CD is about to be ready and only during combat
         try and use lines for MB assist
-
-        PACKAGE ME PLX$
 ]]--
 
-local sVersion = "9.1.0.136"
+local sVersion = "9.1.0.137"
 
 require "Window"
 require "GameLib"
@@ -1589,6 +1587,9 @@ end
 function addon:TogglePsichargeTracker(bEnable)
     if bEnable then
         if not self.buffUpdaterTimer then
+            if self.wBuffBar then -- if for some reason it existed already just recreate it
+                self.wBuffBar:Destroy()
+            end
             self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
             self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
             self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
@@ -1609,7 +1610,6 @@ end
 function addon:PsiChargeDebugger()
     if not uPlayer then return end
     if (os.clock() - self.nLastPsiChargeDebug) >= 300 and not uPlayer:IsInCombat() and self.db.profile.bShowPsiCharge then
-        self:TogglePsichargeTracker(false)
         self:TogglePsichargeTracker(true)
         self.nLastPsiChargeDebug = os.clock()
     end
