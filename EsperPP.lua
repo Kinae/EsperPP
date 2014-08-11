@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.141"
+local sVersion = "9.1.0.142"
 
 require "Window"
 require "GameLib"
@@ -1236,6 +1236,7 @@ function addon:OnAbilityBookChange()
 end
 
 function addon:CombatStateChanged(unit, bInCombat)
+    if not uPlayer then return end
     if unit:GetId() == uPlayer:GetId() and not bInCombat then
         self:PsiChargeDebugger()
     end
