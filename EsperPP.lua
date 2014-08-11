@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.138"
+local sVersion = "9.1.0.139"
 
 require "Window"
 require "GameLib"
@@ -1061,7 +1061,7 @@ function addon:OnEnable()
     -- we recreate the BuffContainerWindow after every 3 min ( or after 3 min when player leaves combat )
     -- because apparently having it running too long eats FPS, but destroying and recreating it fixes FPS
     self.nLastPsiChargeDebug = os.clock()
-    self.psiChargeDebugger = self:ScheduleRepeatingTimer("PsiChargeDebugger", 60)
+    self.psiChargeDebuggerTimer = self:ScheduleRepeatingTimer("PsiChargeDebugger", 60)
     Apollo.RegisterEventHandler("UnitEnteredCombat", "CombatStateChanged", self)
 
     -- Apollo.GetPackage("Gemini:ConfigDialog-1.0").tPackage:Open("EsperPP")
@@ -1236,9 +1236,9 @@ function addon:OnAbilityBookChange()
 end
 
 function addon:CombatStateChanged(unit, bInCombat)
-    if unit ~= uPlayer then return end
-
-    self:PsiChargeDebugger()
+    if unit:GetId() == uPlayer:GetId() and not bInCombat then
+        self:PsiChargeDebugger()
+    end
 end
 
 -----------------------------------------------------------------------------------------------
@@ -1586,36 +1586,34 @@ end
 
 function addon:TogglePsichargeTracker(bEnable)
     if bEnable then
-        if not self.buffUpdaterTimer then
-            if self.wBuffBar then -- if for some reason it existed already just recreate it
-                self.wBuffBar:Destroy()
-            end
-            if self.buffUpdaterTimer then
-                self:CancelTimer(self.buffUpdaterTimer)
-                self.buffUpdaterTimer = nil
-            end
-            self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
-            self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
-            self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
-            self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
-            self:OnMoveOrResizePsiChargeContainer()
+        if self.buffUpdaterTimer then
+            self:CancelTimer(self.buffUpdaterTimer)
+            self.buffUpdaterTimer = nil
         end
+        if self.wBuffBar then -- if for some reason it existed already just recreate it
+            self.wBuffBar:Destroy()
+        end
+        self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
+        self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+        self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+        self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+        self:OnMoveOrResizePsiChargeContainer()
     else
         if self.buffUpdaterTimer then
             self:CancelTimer(self.buffUpdaterTimer)
             self.buffUpdaterTimer = nil
-            if self.wBuffBar then
-                self.wBuffBar:Destroy()
-            end
+        end
+        if self.wBuffBar then
+            self.wBuffBar:Destroy()
         end
     end
 end
 
 function addon:PsiChargeDebugger()
     if not uPlayer then return end
-    if (os.clock() - self.nLastPsiChargeDebug) >= 300 and not uPlayer:IsInCombat() and self.db.profile.bShowPsiCharge then
-        self:TogglePsichargeTracker(true)
+    if (os.clock() - self.nLastPsiChargeDebug) >= 60 and not uPlayer:IsInCombat() and self.db.profile.bShowPsiCharge then
         self.nLastPsiChargeDebug = os.clock()
+        self:TogglePsichargeTracker(true)
     end
 end
 
