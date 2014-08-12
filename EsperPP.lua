@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.142"
+local sVersion = "9.1.0.143"
 
 require "Window"
 require "GameLib"
@@ -803,6 +803,7 @@ If you messed with the settings but could not quite get it the way you wanted, t
                             local l,t,r,b = unpack(defaults.profile.tPsiChargePos)
                             self.db.profile.tPsiChargePos = {l,t,r,b}
                             self.wPsiChargeContainer:SetAnchorOffsets(unpack(defaults.profile.tPsiChargePos))
+                            self.wPsiChargeContainer:SetTooltip("Psi Chare anchor, you can move and resize this")
                             self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeScale
                             self.db.profile.nPsiChargeBuffWindowOffset = defaults.profile.nPsiChargeBuffWindowOffset
                             self.db.profile.nPsiChargeOpacity = defaults.profile.nPsiChargeOpacity
@@ -1644,4 +1645,5 @@ function addon:HideShowPsiChargeContainer(bValue)
     self.wPsiChargeContainer:SetStyle("Moveable", bValue)
     self.wPsiChargeContainer:SetStyle("Sizable", bValue)
     self.wPsiChargeContainer:SetStyle("IgnoreMouse", not bValue)
+    self.wPsiChargeContainer:SetTooltip(bValue and "Psi Chare anchor, you can move and resize this" or "")
 end
