@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.143"
+local sVersion = "9.1.0.144"
 
 require "Window"
 require "GameLib"
@@ -1592,7 +1592,7 @@ function addon:TogglePsichargeTracker(bEnable)
             self:CancelTimer(self.buffUpdaterTimer)
             self.buffUpdaterTimer = nil
         end
-        if self.wBuffBar then -- if for some reason it existed already just recreate it
+        if self.wBuffBar and self.wBuffBar ~= nil then -- if for some reason it existed already just recreate it or nil ( cuz apparantly this might be needed )
             self.wBuffBar:Destroy()
         end
         self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
