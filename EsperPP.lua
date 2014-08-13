@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.144"
+local sVersion = "9.1.0.145"
 
 require "Window"
 require "GameLib"
@@ -1596,8 +1596,10 @@ function addon:TogglePsichargeTracker(bEnable)
             self.wBuffBar:Destroy()
         end
         self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
-        self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
-        self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+        if self.wBuffBar and self.wBuffBar ~= nil then
+            self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+            self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+        end
         self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
         self:OnMoveOrResizePsiChargeContainer()
     else
