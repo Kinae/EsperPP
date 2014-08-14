@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.146"
+local sVersion = "9.1.0.147"
 
 require "Window"
 require "GameLib"
@@ -1626,11 +1626,9 @@ function addon:HideFocus()
 end
 
 function addon:CreateBuffBarForPsiCharge()
-    if not self.wBuffBar then
-        self.wBuffBar = GeminiGUI:Create("BuffContainerWindow", self.tBuffBarDef):GetInstance(self, self.wPsiChargeContainer)
-        self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
-        self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
-    end
+    self.wBuffBar = GeminiGUI:Create("BuffContainerWindow", self.tBuffBarDef):GetInstance(self, self.wPsiChargeContainer)
+    self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+    self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
 end
 
 function addon:TogglePsichargeTracker(bEnable)
