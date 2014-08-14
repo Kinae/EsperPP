@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.145"
+local sVersion = "9.1.0.146"
 
 require "Window"
 require "GameLib"
@@ -164,7 +164,48 @@ end
 -----------------------------------------------------------------------------------------------
 -- Initialization
 -----------------------------------------------------------------------------------------------
+
 function addon:OnInitialize()
+    self.tPsiChargeContainerDef = {
+        AnchorOffsets = { 339, 112, 428, 201 },
+        RelativeToClient = true,
+        Font = "CRB_InterfaceLarge_BBO",
+        Text = "PC",
+        BGColor = "UI_WindowBGDefault",
+        TextColor = "UI_WindowTextDefault",
+        Name = "PsiChargeContainer",
+        Border = true,
+        Picture = true,
+        SwallowMouseClicks = true,
+        Moveable = true,
+        Overlapped = true,
+        DT_WORDBREAK = true,
+        DT_VCENTER = true,
+        DT_CENTER = true,
+        Sprite = "Icon_SkillMisc_UI_m_slvo",
+        Sizable = true,
+        AutoScaleTextOff = 0,
+        MaintainAspectRatio = true,
+        Tooltip = "Psi Charge anchor, you can move and resize this",
+    }
+
+    self.tBuffBarDef = {
+        AnchorOffsets = { -1, -1, 1, 1 },
+        AnchorPoints = { 0, 0, 1, 1 },
+        Class = "BuffContainerWindow",
+        RelativeToClient = true,
+        Font = "Subtitle",
+        BGColor = "UI_WindowBGDefault",
+        TextColor = "UI_WindowTextDefault",
+        Name = "BuffBar",
+        Border = true,
+        Picture = true,
+        SwallowMouseClicks = true,
+        Overlapped = true,
+        BeneficialBuffs = true,
+        IgnoreMouse = true,
+        TooltipFont = "Subtitle",
+    }
     -- Telegraph assist marker definition
     self.tMarkerDef = {
         AnchorOffsets = { -5, -5, 5, 5 },
@@ -803,7 +844,7 @@ If you messed with the settings but could not quite get it the way you wanted, t
                             local l,t,r,b = unpack(defaults.profile.tPsiChargePos)
                             self.db.profile.tPsiChargePos = {l,t,r,b}
                             self.wPsiChargeContainer:SetAnchorOffsets(unpack(defaults.profile.tPsiChargePos))
-                            self.wPsiChargeContainer:SetTooltip("Psi Chare anchor, you can move and resize this")
+                            self.wPsiChargeContainer:SetTooltip("Psi Charge anchor, you can move and resize this")
                             self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeScale
                             self.db.profile.nPsiChargeBuffWindowOffset = defaults.profile.nPsiChargeBuffWindowOffset
                             self.db.profile.nPsiChargeOpacity = defaults.profile.nPsiChargeOpacity
@@ -970,18 +1011,16 @@ function addon:OnEnable()
     Apollo.RegisterSlashCommand("epp", "OpenMenu", self)
 
     -- create anchors and windows and load database values
-    self.wPsiChargeContainer = Apollo.LoadForm("EsperPP.xml", "PsiChargeContainer", nil, self)
+    self.wPsiChargeContainer = GeminiGUI:Create("Window", self.tPsiChargeContainerDef):GetInstance(self)
+    -- self.wPsiChargeContainer = Apollo.LoadForm("EsperPP.xml", "PsiChargeContainer", nil, self)
     self.wPsiChargeContainer:SetAnchorOffsets(unpack(self.db.profile.tPsiChargePos))
     self:HideShowPsiChargeContainer(self.db.profile.bShowPsiChargeAnchor)
     self.wPsiChargeContainer:AddEventHandler("WindowMove", "OnMoveOrResizePsiChargeContainer", self)
     self.wPsiChargeContainer:AddEventHandler("WindowSizeChanged", "OnMoveOrResizePsiChargeContainer", self)
     if self.db.profile.bShowPsiCharge then
-        self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
-        self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+        self:CreateBuffBarForPsiCharge()
+        self:OnMoveOrResizePsiChargeContainer()
         self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
-        local l,t,r,b = unpack(self.db.profile.tPsiChargePos)
-        self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
-        self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
     end
 
     self.wFocus = Apollo.LoadForm("EsperPP.xml", "Focus", nil, self)
@@ -1310,7 +1349,7 @@ function addon:NotSoFastTimer()
 end
 
 function addon:BuffBarFilterUpdater()
-    if not uPlayer then return end
+    if not uPlayer or not self.wBuffBar then return end
     self.wBuffBar:SetUnit(uPlayer)
     local tBuffs = self.wBuffBar:GetChildren()
     local bFound = false
@@ -1586,30 +1625,26 @@ function addon:HideFocus()
     self.db.profile.bFocusShown = false
 end
 
+function addon:CreateBuffBarForPsiCharge()
+    if not self.wBuffBar then
+        self.wBuffBar = GeminiGUI:Create("BuffContainerWindow", self.tBuffBarDef):GetInstance(self, self.wPsiChargeContainer)
+        self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+        self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+    end
+end
+
 function addon:TogglePsichargeTracker(bEnable)
+    if self.buffUpdaterTimer then
+        self:CancelTimer(self.buffUpdaterTimer)
+        self.buffUpdaterTimer = nil
+    end
+    if self.wBuffBar then -- if for some reason it existed already just recreate it or nil ( cuz apparantly this might be needed )
+        self.wBuffBar:Destroy()
+    end
     if bEnable then
-        if self.buffUpdaterTimer then
-            self:CancelTimer(self.buffUpdaterTimer)
-            self.buffUpdaterTimer = nil
-        end
-        if self.wBuffBar and self.wBuffBar ~= nil then -- if for some reason it existed already just recreate it or nil ( cuz apparantly this might be needed )
-            self.wBuffBar:Destroy()
-        end
-        self.wBuffBar = Apollo.LoadForm("EsperPP.xml", "BuffBar", self.wPsiChargeContainer, self)
-        if self.wBuffBar and self.wBuffBar ~= nil then
-            self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
-            self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
-        end
-        self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+        self:CreateBuffBarForPsiCharge()
         self:OnMoveOrResizePsiChargeContainer()
-    else
-        if self.buffUpdaterTimer then
-            self:CancelTimer(self.buffUpdaterTimer)
-            self.buffUpdaterTimer = nil
-        end
-        if self.wBuffBar then
-            self.wBuffBar:Destroy()
-        end
+        self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
     end
 end
 
@@ -1647,5 +1682,5 @@ function addon:HideShowPsiChargeContainer(bValue)
     self.wPsiChargeContainer:SetStyle("Moveable", bValue)
     self.wPsiChargeContainer:SetStyle("Sizable", bValue)
     self.wPsiChargeContainer:SetStyle("IgnoreMouse", not bValue)
-    self.wPsiChargeContainer:SetTooltip(bValue and "Psi Chare anchor, you can move and resize this" or "")
+    self.wPsiChargeContainer:SetTooltip(bValue and "Psi Charge anchor, you can move and resize this" or "")
 end
