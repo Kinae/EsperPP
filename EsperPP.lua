@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.148"
+local sVersion = "9.1.0.149"
 
 require "Window"
 require "GameLib"
@@ -53,7 +53,6 @@ local addon = Apollo.GetPackage("Gemini:Addon-1.1").tPackage:NewAddon("EsperPP",
 local GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
 local GeminiGUI = Apollo.GetPackage("Gemini:GUI-1.0").tPackage
 local GeminiConfig = Apollo.GetPackage("Gemini:Config-1.0").tPackage
-local GeminiColor = Apollo.GetPackage("GeminiColor").tPackage
 --local GeminiCmd = Apollo.GetPackage("Gemini:ConfigCmd-1.0").tPackage
 local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", true)
 
@@ -1636,8 +1635,15 @@ function addon:TogglePsichargeTracker(bEnable)
         self:CancelTimer(self.buffUpdaterTimer, true)
         self.buffUpdaterTimer = nil
     end
-    if self.wBuffBar then -- if for some reason it existed already just recreate it or nil ( cuz apparantly this might be needed )
-        self.wBuffBar:Destroy()
+    -- if self.wBuffBar then -- if for some reason it existed already just recreate it or nil ( cuz apparantly this might be needed )
+    --     self.wBuffBar:Destroy()
+    -- end
+    -- some industrious way of destroying the frame because apparently somewhere self.wBuffBar is being lost
+    local tChildren = self.wPsiChargeContainer:GetChildren()
+    if #tChildren > 0 then
+        for i=1, #tChildren do
+            tChildren[i]:Destroy()
+        end
     end
     if bEnable then
         self:CreateBuffBarForPsiCharge()
