@@ -13,10 +13,9 @@
         bar texture picker for focus/CB bar -- this will probably have to wait for some shared media support
 
         shockwave circle that only shows when CD is about to be ready and only during combat
-        try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.150"
+local sVersion = "9.1.0.152"
 
 require "Window"
 require "GameLib"
@@ -62,6 +61,7 @@ local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", t
 local uPlayer = nil
 local nAnchorEdge = 3
 local nMBAbilityId = 19019
+local tPixieLocPoints = { 0, 0, 0, 0 }
 
 local defaults = {
     profile = {
@@ -110,11 +110,12 @@ local defaults = {
         tPsiChargePos = {825,492,871,538},
         nPsiChargeBuffWindowOffset = 11,
         nPsiChargeOpacity = 0.7,
-        nMindBurstDotCount = 5,
         nMindBurstOpacity = 0.5,
         bShowMBAssist = true,
         nMindBurstPPShowThreshold = 3,
         MBAssistColor = {0.01,0.85,0.91,0.5},
+        nMindBurstLineWidth = 3,
+        nMindBurstOutLineWidth = 2,
         nUISoundsVolumeValue = 0.7,
         nMasterVolumeValue = 1,
         nVolumeChangeDuration = 5,
@@ -208,20 +209,6 @@ function addon:OnInitialize()
         BeneficialBuffs = true,
         IgnoreMouse = true,
         TooltipFont = "Subtitle",
-    }
-    -- Telegraph assist marker definition
-    self.tMarkerDef = {
-        AnchorOffsets = { -5, -5, 5, 5 },
-        AnchorPoints = { "SELF", "SELF", "SELF", "SELF" },
-        Class = "WorldFixedWindow",
-        RelativeToClient = true,
-        Picture = true,
-        SwallowMouseClicks = true,
-        Overlapped = true,
-        IgnoreMouse = true,
-        Visible = false,
-        Name = "Marker",
-        Sprite = "ClientSprites:WhiteCircle",
     }
     self.db = Apollo.GetPackage("Gemini:DB-1.0").tPackage:New(self, defaults, true)
 
@@ -929,9 +916,7 @@ If you messed with the settings but could not quite get it the way you wanted, t
  
 Caveats: This feature works best on flat surfaces, and is probably not very useful when you are fighting on uneven ground. Since there is no way to compensate for the grounds elevation sadly it can't really get better than as it is now.
  
-Remember telegraph assists only shows up if you have the corresponding ability in your LAS.
- 
-Note: this is quite resource heavy, especially the more dots you have the more resource the addon will use.]],
+Remember telegraph assists only shows up if you have the corresponding ability in your LAS.]],
                         type = "description",
                     },
                     telegraphAssisttOptionsHeader = {
@@ -945,13 +930,7 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         type = "toggle",
                         width = "full",
                         set = function(info, v) self.db.profile[info[#info]] = v
-                            if v then
-                                self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
-                                local r,g,b = unpack(self.db.profile.MBAssistColor)
-                                self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
-                            else
-                                self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
-                            end
+                            self.wMBOverlay:Show(v)
                         end,
                     },
                     MindBurstPPShowThresholdDesc = {
@@ -979,39 +958,26 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         step = 0.01,
                         width = "full",
                         set = function(info, v) self.db.profile[info[#info]] = v
-                            local r,g,b = unpack(self.db.profile.MBAssistColor)
-                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,v))
+                            self.wMBOverlay:SetOpacity(v)
                         end,
                     },
-                    nMindBurstDotCount = {
+                    nMindBurstLineWidth = {
                         order = 30,
-                        name = "Mind burst dots per line",
+                        name = "Mind burst line width",
                         type = "range",
-                        min = 2,
+                        min = 1,
                         max = 50,
                         step = 1,
                         width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v
-                            self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
-                            self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, v)
-                            local r,g,b = unpack(self.db.profile.MBAssistColor)
-                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
-                        end,
                     },
-                    nMindBurstDotSize = {
+                    nMindBurstOutLineWidth = {
                         order = 35,
-                        name = "Mind burst dots size",
+                        name = "Mind burst outline width",
                         type = "range",
-                        min = 1,
+                        min = 0,
                         max = 20,
                         step = 1,
                         width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v
-                            self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
-                            self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, v)
-                            local r,g,b = unpack(self.db.profile.MBAssistColor)
-                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
-                        end,
                     },
                     bSimpleColorMBAssist = {
                         order = 40,
@@ -1019,10 +985,6 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         desc = "Use only one color for mind burst telegraph assist, if this is off then the dots will be colored based on your psi point color settings.",
                         type = "toggle",
                         width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v
-                            local r,g,b = unpack(self.db.profile.MBAssistColor)
-                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
-                        end,
                     },
                     MBAssistColor = {
                         width = "full",
@@ -1031,9 +993,7 @@ Note: this is quite resource heavy, especially the more dots you have the more r
                         disabled = function() return not self.db.profile.bSimpleColorMBAssist end,
                         type = "color",
                         get = function(info) return unpack(self.db.profile[info[#info]]) end,
-                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a}
-                            self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
-                        end,
+                        set = function(info, r,g,b) self.db.profile[info[#info]] = {r,g,b} end,
                     },
                     GeminiConfigScrollingFrameBottomWidgetFix = {
                         order = 9999,
@@ -1091,15 +1051,12 @@ function addon:OnEnable()
         self:ShowCBTestBars(true)
     end
 
-    self.tMarkers = {}
-
+    self.wMBOverlay = Apollo.LoadForm("EsperPP.xml", "Overlay", "InWorldHudStratum", self)
+    self.wMBOverlay:Show(true, true)
+    self.wMBOverlay:SetOpacity(self.db.profile.nMindBurstOpacity)
     self.bMBonLAS = nil
     self.nMBDegree = 15
     self.nMBRange = 25+1/math.cos(math.rad(self.nMBDegree))
-
-    self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
-    r,g,b = unpack(self.db.profile.MBAssistColor)
-    self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
 
     Apollo.RegisterEventHandler("AbilityBookChange", "OnAbilityBookChange", self)
     Apollo.RegisterEventHandler("NextFrame", "OnUpdate", self)
@@ -1200,36 +1157,17 @@ do
     end
 end
 
-function addon:SetUpMarkersForTelegraphAssist(nAbilityId, nLineCount, nDotCount)
-    local nScale = tonumber(self.db.profile.nMindBurstDotSize)
-    self.tMarkerDef.AnchorOffsets = {-nScale,-nScale,nScale,nScale}
-    local tMarker = GeminiGUI:Create("AbilityItemWindow", self.tMarkerDef)
-    self.tMarkers[nAbilityId] = {}
-    for i = 1, nLineCount do
-        self.tMarkers[nAbilityId][i] = {}
-        for j = 1, nDotCount do
-            self.tMarkers[nAbilityId][i][j] = tMarker:GetInstance()
-        end
+function addon:GetMBAssistColor(nPP)
+    local r,g,b
+    if uPlayer:IsInCombat() then
+        r,g,b = unpack(self.db.profile["ppColor"..nPP])
+    else
+        r,g,b = unpack(self.db.profile.ppColorOOC)
     end
-end
-
-function addon:DestroyMarkersForTelegraphAssist(nAbilityId)
-    if not self.tMarkers[nAbilityId] then return end
-    for _, line in ipairs(self.tMarkers[nAbilityId]) do
-        for _, wDot in ipairs(line) do
-            wDot:Destroy()
-        end
+    if self.db.profile.bSimpleColorMBAssist then
+        r,g,b = unpack(self.db.profile.MBAssistColor)
     end
-    self.tMarkers[nAbilityId] = nil
-end
-
-function addon:SetTelegraphAssistColor(nAbilityId, color)
-    if not self.tMarkers[nAbilityId] then return end
-    for _, line in ipairs(self.tMarkers[nAbilityId]) do
-        for _, wDot in ipairs(line) do
-            wDot:SetBGColor(color)
-        end
-    end
+    return {r=r,g=g,b=b,a=1} -- a = 1 because this is not really an alpha or at least not for lines, alpha has to be set on the container window
 end
 
 function addon:getCBSpellIds()
@@ -1306,16 +1244,7 @@ function addon:DelayedAbilityBookCheck()
             self.CBTimerRunning = false
         end
     end
-    if nMBSpellId then
-        self.bMBonLAS = true
-        self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
-        self:SetUpMarkersForTelegraphAssist(nMBAbilityId, 3, self.db.profile.nMindBurstDotCount)
-        local r,g,b = unpack(self.db.profile.MBAssistColor)
-        self:SetTelegraphAssistColor(nMBAbilityId, CColor.new(r,g,b,self.db.profile.nMindBurstOpacity))
-    else
-        self.bMBonLAS = nil
-        self:DestroyMarkersForTelegraphAssist(nMBAbilityId)
-    end
+    self.bMBonLAS = nMBSpellId
 end
 
 function addon:OnAbilityBookChange()
@@ -1483,14 +1412,12 @@ function addon:OnUpdate()
     --     end
     -- end
 
-    if self.bMBonLAS and self.db.profile.bShowMBAssist and self.tMarkers[nMBAbilityId] and #self.tMarkers[nMBAbilityId] > 1 then
-        if self.db.profile.nMindBurstPPShowThreshold > nPP then
-            for nCounter = 1, #self.tMarkers[nMBAbilityId] do
-                for i = 1, #self.tMarkers[nMBAbilityId][nCounter] do
-                    self.tMarkers[nMBAbilityId][nCounter][i]:Show(false)
-                end
-            end
-        else
+    
+    if self.bMBonLAS and self.db.profile.bShowMBAssist then
+        -- we are recreating pixies all the time instead of just creating them once then using UpdatePixie
+        -- probably should look into doing that sometime
+        self.wMBOverlay:DestroyAllPixies()
+        if self.db.profile.nMindBurstPPShowThreshold <= nPP then
             local tFacing, tPos = uPlayer:GetFacing(), uPlayer:GetPosition()
             if tFacing and tPos then
                 local rot = math.atan2(tFacing.x, tFacing.z)
@@ -1500,45 +1427,35 @@ function addon:OnUpdate()
 
                 local nOffset, nOffsetDegree = 1, 180 -- center point is not on the player but behind it
 
-                for nCounter = 1, #self.tMarkers[nMBAbilityId] do
-                    for i = 1, #self.tMarkers[nMBAbilityId][nCounter] do
-                        if (nCounter%3) == 1 then
-                            local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                            local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-                            local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-                            local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-                            local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
-                            self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
-                        elseif (nCounter%3) == 2 then
-                            local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                            local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-                            local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
-                            local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
-                            local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/#self.tMarkers[nMBAbilityId][nCounter]) * (i-1))
-                            self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
-                        elseif (nCounter%3) == 0 then
-                            local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                            local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
-                            local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
-                            local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
-                            local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
-                            local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
-                            local vVector = Vector3.InterpolateLinear(vV1, vV2, (1/(#self.tMarkers[nMBAbilityId][nCounter]-1)) * (i-1))
-                            self.tMarkers[nMBAbilityId][nCounter][i]:SetWorldLocation(vVector)
-                        end
-                        if not self.db.profile.bSimpleColorMBAssist and bPPChanged then
-                            local a = self.db.profile.nMindBurstOpacity
-                            local r,g,b
-                            if uPlayer:IsInCombat() then
-                                r,g,b = unpack(self.db.profile["ppColor"..nPP])
-                            else
-                                r,g,b = unpack(self.db.profile.ppColorOOC)
-                            end
-                            self.tMarkers[nMBAbilityId][nCounter][i]:SetBGColor(CColor.new(r,g,b,a))
-                        end
-                        self.tMarkers[nMBAbilityId][nCounter][i]:Show(true)
-                    end
-                end
+                -- lines 1
+                local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                local vV1Pos = GameLib.WorldLocToScreenPoint(vV1)
+                local vV2Pos = GameLib.WorldLocToScreenPoint(vV2)
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth + self.db.profile.nMindBurstOutLineWidth, cr = "ff000000", loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = self:GetMBAssistColor(nPP), loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                -- line 2
+                local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                local vV1 = Vector3.New(tStartPoint.x, tStartPoint.y, tStartPoint.z)
+                local vV2 = Vector3.New(tEndPoint.x, tEndPoint.y, tEndPoint.z)
+                local vV1Pos = GameLib.WorldLocToScreenPoint(vV1)
+                local vV2Pos = GameLib.WorldLocToScreenPoint(vV2)
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth + self.db.profile.nMindBurstOutLineWidth, cr = "ff000000", loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = self:GetMBAssistColor(nPP), loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                -- line 3
+                local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
+                local tLeftStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
+                local tLeftEndPoint = { x = tLeftStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tLeftStartPoint.y, z = tLeftStartPoint.z+self.nMBRange*math.cos(rotPlus)}
+                local vV1 = Vector3.New(tLeftEndPoint.x, tLeftEndPoint.y, tLeftEndPoint.z)
+                local vV2 = Vector3.New(tRightEndPoint.x, tRightEndPoint.y, tRightEndPoint.z)
+                local vV1Pos = GameLib.WorldLocToScreenPoint(vV1)
+                local vV2Pos = GameLib.WorldLocToScreenPoint(vV2)
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth + self.db.profile.nMindBurstOutLineWidth, cr = "ff000000", loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = self:GetMBAssistColor(nPP), loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
             end
         end
     end
