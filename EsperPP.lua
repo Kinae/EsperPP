@@ -16,7 +16,7 @@
         try and use lines for MB assist
 ]]--
 
-local sVersion = "9.1.0.149"
+local sVersion = "9.1.0.150"
 
 require "Window"
 require "GameLib"
@@ -101,6 +101,10 @@ local defaults = {
         CBBarColor = {0.20,0.64,0.67,0.7},
         CBBarBackgroundColor = {0.03,0.05,0.07,0.7},
         bShowPsiCharge = true,
+        PCColor1 = {0.85,0.44,0.84,1},
+        PCColor2 = {0.33,0.10,0.55,1},
+        bShowPCCounter = true,
+        bShowPCBars = true,
         bShowPsiChargeAnchor = true,
         nPsiChargeScale = 3.5,
         tPsiChargePos = {825,492,871,538},
@@ -789,8 +793,53 @@ If you messed with the settings but could not quite get it the way you wanted, t
                         name = "Show psi charge tracker",
                         type = "toggle",
                         width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:TogglePsichargeTracker(v) end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self:TogglePsichargeTracker(v)
+                        -- XXX uncomment this for next patch
+                            -- self.db.profile.bShowPCCounter = v
+                            -- self.wDisplay:FindChild("PCCounter"):Show(v)
+                            -- self.db.profile.bShowPCBars = v
+                            -- self.wDisplay:FindChild("PCBar1"):Show(v)
+                            -- self.wDisplay:FindChild("PCBar2"):Show(v)
+                        end,
                     },
+
+                    -- XXX uncomment this for next patch
+                    -- bShowPCCounter = {
+                    --     order = 20,
+                    --     name = "Show psi charge numeric counter",
+                    --     type = "toggle",
+                    --     width = "full",
+                    --     disabled = function() return not self.db.profile.bShowPsiCharge end,
+                    --     set = function(info, v) self.db.profile[info[#info]] = v; self.wDisplay:FindChild("PCCounter"):Show(v) end,
+                    -- },
+                    -- bShowPCBars = {
+                    --     order = 30,
+                    --     name = "Show psi charge bar display",
+                    --     type = "toggle",
+                    --     width = "full",
+                    --     disabled = function() return not self.db.profile.bShowPsiCharge end,
+                    --     set = function(info, v) self.db.profile[info[#info]] = v;
+                    --         self.wDisplay:FindChild("PCBar1"):Show(v)
+                    --         self.wDisplay:FindChild("PCBar2"):Show(v)
+                    --     end,
+                    -- },
+                    -- PCColor1 = {
+                    --     order = 40,
+                    --     name = "Color for 1 psi charge",
+                    --     type = "color",
+                    --     hasAlpha = true,
+                    --     get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                    --     set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
+                    -- },
+                    -- PCColor2 = {
+                    --     order = 50,
+                    --     name = "Color for 2 psi charge",
+                    --     type = "color",
+                    --     hasAlpha = true,
+                    --     get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                    --     set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
+                    -- },
+
                     nPsiChargeScale = {
                         order = 10,
                         name = "Psi charge scale",
@@ -1393,17 +1442,46 @@ function addon:OnUpdate()
 
 
     -- T8 builder stack tracking
-    -- buff or API is bugged and does not show up among the return values
-
-    --local tBuffs = uPlayer:GetBuffs().arBeneficial
-    --if tBuffs then
-    --  if
-    --  /eval for index, tData in pairs(GameLib.GetPlayerUnit():GetBuffs().arBeneficial) do Print(tData.splEffect:GetName() .. " " .. tData.splEffect:GetId()) end
-    --  /eval Print(#GameLib.GetPlayerUnit():GetBuffs().arBeneficial)
-    --else
-    --  self.wDisplay:FindChild("T8stack"):Show(false)
-    --end
-
+    -- this works on PTR only for now
+    -- if self.db.profile.bShowPsiCharge then
+    --     local tBuffs = uPlayer:GetBuffs().arBeneficial
+    --     local bHasPsiCharge = false
+    --     if tBuffs then
+    --         for i=1, #tBuffs do
+    --             if tBuffs[i].splEffect and tBuffs[i].splEffect:GetId() == 51964 then -- obviously the Psi Charge spellId
+    --                 bHasPsiCharge = true
+    --                 local nCount = tBuffs[i].nCount
+    --                 if nCount and nCount > 0 and nCount < 3 then
+    --                     if self.db.profile.bShowPCCounter then
+    --                         self.wPCCounter:SetText(nCount)
+    --                         self.wPCCounter:SetTextColor(self.db.profile["PCColor"..nCount])
+    --                         self.wPCCounter:Show(true)
+    --                     end
+    --                     if self.db.profile.bShowPCBars then
+    --                         self.tPCBars[nCount]:SetProgress(1)
+    --                     end
+    --                 end
+    --             end
+    --         end
+    --         if not bHasPsiCharge then
+    --             if self.db.profile.bShowPCCounter then
+    --                 self.wPCCounter:Show(false)
+    --             end
+    --             if self.db.profile.bShowPCBars then
+    --                 self.tPCBars[1]:SetProgress(0)
+    --                 self.tPCBars[2]:SetProgress(0)
+    --             end
+    --         end
+    --     else
+    --         if self.db.profile.bShowPCCounter then
+    --             self.wPCCounter:Show(false)
+    --         end
+    --         if self.db.profile.bShowPCBars then
+    --             self.tPCBars[1]:SetProgress(0)
+    --             self.tPCBars[2]:SetProgress(0)
+    --         end
+    --     end
+    -- end
 
     if self.bMBonLAS and self.db.profile.bShowMBAssist and self.tMarkers[nMBAbilityId] and #self.tMarkers[nMBAbilityId] > 1 then
         if self.db.profile.nMindBurstPPShowThreshold > nPP then
@@ -1526,6 +1604,16 @@ do
         self.wDisplay:SetScale(db.nPPScale)
         self.wDisplay:FindChild("Text"):SetFont(tMyFontTable[db.psiPointFont])
         self.wDisplay:FindChild("Text"):SetAnchorOffsets(db.nLOffset, db.nTOffset, db.nROffset, db.nBOffset)
+
+        -- CB stuff, it is here so players don't have to bother with moving it individually
+        -- XXX uncomment this for next patch
+        -- self.tPCBars = {self.wDisplay:FindChild("PCBar1"), self.wDisplay:FindChild("PCBar2")}
+        -- for i=1, #self.tPCBars do
+        --     self.tPCBars[i]:Show(self.db.profile.bShowPCBars)
+        --     self.tPCBars[i]:SetMax(1)
+        -- end
+        -- self.wPCCounter = self.wDisplay:FindChild("PCCounter")
+        -- self.wPCCounter:Show(self.db.profile.bShowPCCounter)
 
         self:RepositionDisplay()
     end
