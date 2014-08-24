@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.152"
+local sVersion = "9.1.0.153"
 
 require "Window"
 require "GameLib"
@@ -1058,6 +1058,10 @@ function addon:OnEnable()
     self.nMBDegree = 15
     self.nMBRange = 25+1/math.cos(math.rad(self.nMBDegree))
 
+    -- self.wShockwaveOverlay = Apollo.LoadForm("EsperPP.xml", "Overlay", "InWorldHudStratum", self)
+    -- self.wShockwaveOverlay:Show(true, true)
+    -- self.wShockwaveOverlay:SetOpacity(self.db.profile.nShockwaveOpacity)
+
     Apollo.RegisterEventHandler("AbilityBookChange", "OnAbilityBookChange", self)
     Apollo.RegisterEventHandler("NextFrame", "OnUpdate", self)
 
@@ -1336,7 +1340,7 @@ function addon:BuffBarFilterUpdater()
             --"Building up Psi Energy, at 6 charges, gain 1 Psi Point."
             -- hopefully not likely to have a similarly structured tooltip for another buff
             -- if sTooltip:match("Psi Energy") then
-            if sTooltip:match(".*,.*%d.*,.*%d.*%.") then -- to possibly work for more localization, assuming some comma usage and 2 numbers
+            if sTooltip:match(".*,.*%d.*,.*%d.*%.") and not sTooltip:match(".*, %d.*,.*%d.*%d.*%d") then -- to possibly work for more localization, assuming some comma usage and 2 numbers, and not the Innate buff
                 wBuff:Show(true)
                 bFound = true
 
@@ -1427,6 +1431,7 @@ function addon:OnUpdate()
 
                 local nOffset, nOffsetDegree = 1, 180 -- center point is not on the player but behind it
 
+                local crColor = self:GetMBAssistColor(nPP)
                 -- lines 1
                 local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
                 local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotPlus), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotPlus)}
@@ -1435,7 +1440,7 @@ function addon:OnUpdate()
                 local vV1Pos = GameLib.WorldLocToScreenPoint(vV1)
                 local vV2Pos = GameLib.WorldLocToScreenPoint(vV2)
                 self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth + self.db.profile.nMindBurstOutLineWidth, cr = "ff000000", loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
-                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = self:GetMBAssistColor(nPP), loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = crColor, loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
                 -- line 2
                 local tStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
                 local tEndPoint = { x = tStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tStartPoint.y, z = tStartPoint.z+self.nMBRange*math.cos(rotNeg)}
@@ -1444,7 +1449,7 @@ function addon:OnUpdate()
                 local vV1Pos = GameLib.WorldLocToScreenPoint(vV1)
                 local vV2Pos = GameLib.WorldLocToScreenPoint(vV2)
                 self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth + self.db.profile.nMindBurstOutLineWidth, cr = "ff000000", loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
-                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = self:GetMBAssistColor(nPP), loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = crColor, loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
                 -- line 3
                 local tRightStartPoint = { x = tPos.x+nOffset*math.sin(rot+math.rad(nOffsetDegree)) , y = tPos.y , z = tPos.z+nOffset*math.cos(rot+math.rad(nOffsetDegree)) }
                 local tRightEndPoint = { x = tRightStartPoint.x+self.nMBRange*math.sin(rotNeg), y = tRightStartPoint.y, z = tRightStartPoint.z+self.nMBRange*math.cos(rotNeg)}
@@ -1455,10 +1460,36 @@ function addon:OnUpdate()
                 local vV1Pos = GameLib.WorldLocToScreenPoint(vV1)
                 local vV2Pos = GameLib.WorldLocToScreenPoint(vV2)
                 self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth + self.db.profile.nMindBurstOutLineWidth, cr = "ff000000", loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
-                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = self:GetMBAssistColor(nPP), loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
+                self.wMBOverlay:AddPixie( { bLine = true, fWidth = self.db.profile.nMindBurstLineWidth, cr = crColor, loc = { fPoints = tPixieLocPoints, nOffsets = { vV1Pos.x, vV1Pos.y, vV2Pos.x, vV2Pos.y }}} )
             end
         end
     end
+
+    -- self.wShockwaveOverlay:DestroyAllPixies()
+    -- self.wShockwaveOverlay:Show(true)
+    -- local p = uPlayer:GetPosition()
+    -- local rad = 2*math.pi
+    -- self.DistanceFactor = 0.1
+    -- local baseAng = 0
+    -- local interval = math.floor(self.DistanceFactor*3)
+    -- for k=0, 360, interval do
+    --     local thisAng = baseAng+(math.rad((k/self.DistanceFactor)*interval))
+    --     if thisAng > 180 then thisAng = 180-thisAng end
+
+    --     local v1 = Vector3.New(p.x, p.y, p.z)
+    --     local v2 = Vector3.New(p.x+rad*math.sin(thisAng), p.y, p.z+rad*math.cos(thisAng))
+    --     local point = Vector3.InterpolateLinear(v1, v2, 1)
+    --     local ScreenPos = GameLib.WorldLocToScreenPoint(point)
+    --     local tPoints = {
+    --         (math.floor(ScreenPos.x) - math.floor(16/2+0.5)),
+    --         (math.floor(ScreenPos.y) - math.floor(16/2+0.5)),
+    --         (math.floor(ScreenPos.x) + math.floor(16/2+0.5)),
+    --         (math.floor(ScreenPos.y) + math.floor(16/2+0.5))
+    --     }
+    --     local t = {strSprite = "ClientSprites:WhiteCircle", loc = { fPoints = {0,0,0,0}, nOffsets = tPoints}, fRotation = self:CalculateRotation(GameLib.GetPlayerUnit, point)}
+    --     self.wShockwaveOverlay:AddPixie(t)
+    -- end
+
 end
 
 -----------------------------------------------------------------------------------------------
