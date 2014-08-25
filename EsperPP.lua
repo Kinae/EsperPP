@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.154"
+local sVersion = "9.1.0.155"
 
 require "Window"
 require "GameLib"
@@ -1249,9 +1249,7 @@ function addon:DelayedAbilityBookCheck()
         end
     end
     self.bMBonLAS = nMBSpellId
-    if not nMBSpellId then
-        self.wMBOverlay:Show(false)
-    end
+    self.wMBOverlay:Show(nMBSpellId and true or false)
 end
 
 function addon:OnAbilityBookChange()
