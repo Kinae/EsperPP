@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.155"
+local sVersion = "9.1.0.156"
 
 require "Window"
 require "GameLib"
@@ -649,6 +649,7 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                         width = "full",
                         set = function(info, v)
                             self.db.profile[info[#info]] = v
+                            self:RecreateCBDisplay()
                             self:ToggleCBTrackerTimer(v)
                             if not v then
                                 self.db.profile.bShowCBTestBars = v
@@ -1576,14 +1577,15 @@ do
     function addon:RecreateCBDisplay()
         -- destroy stuff
         if self.wCBDisplay then self.wCBDisplay:Destroy() end
+        local db = self.db.profile
 
         -- create the display
         self.wCBDisplay = Apollo.LoadForm("EsperPP.xml", "CBDisplay", nil, self)
-        self.wCBDisplay:Show(true)
+        self.wCBDisplay:Show(db.bShowCB)
 
         -- apply db settings to the GeminiGUI window def
         self:RepositionCBDisplay()
-        local db = self.db.profile
+        
         for i=1, 3 do
             local wCBBar = Apollo.LoadForm("EsperPP.xml", "CBProgressBar", self.wCBDisplay, self)
             wCBBar:SetName(("CBProgressBar%d"):format(i))
