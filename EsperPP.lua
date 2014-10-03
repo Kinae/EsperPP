@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.1.2"
+local sVersion = "9.1.1.3"
 
 require "Window"
 require "GameLib"
@@ -55,6 +55,16 @@ local GeminiConfig = Apollo.GetPackage("Gemini:Config-1.0").tPackage
 --local GeminiCmd = Apollo.GetPackage("Gemini:ConfigCmd-1.0").tPackage
 local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", true)
 
+-- function getPC()
+--     for i=1, 1000000 do
+--         local spell = GameLib.GetSpell(i)
+--         if  spell and spell:GetFlavor() and spell:GetFlavor():find("Building up Psi Energy")then
+--             D(i)
+--         end
+--     end
+-- end
+
+
 -----------------------------------------------------------------------------------------------
 -- Locals and defaults
 -----------------------------------------------------------------------------------------------
@@ -62,6 +72,7 @@ local uPlayer = nil
 local nAnchorEdge = 3
 local nMBAbilityId = 19019
 local tPixieLocPoints = { 0, 0, 0, 0 }
+local nPsiChargeBuffId = 51964
 
 local defaults = {
     profile = {
@@ -1013,6 +1024,11 @@ end
 function addon:OnEnable()
     if GameLib.GetPlayerUnit():GetClassId() ~= GameLib.CodeEnumClass.Esper then return end -- not esper
 
+    self.sPsiChargeDescription = ""
+    local spell = GameLib.GetSpell(nPsiChargeBuffId)
+    if spell and spell:GetFlavor() then
+        self.sPsiChargeDescription = spell:GetFlavor()
+    end
     GeminiConfig:RegisterOptionsTable("EsperPP", self.myOptionsTable)
 
     Apollo.RegisterSlashCommand("EsperPP", "OpenMenu", self)
@@ -1342,8 +1358,8 @@ function addon:BuffBarFilterUpdater()
             local sTooltip = wBuff:GetBuffTooltip()
             --"Building up Psi Energy, at 6 charges, gain 1 Psi Point."
             -- hopefully not likely to have a similarly structured tooltip for another buff
-            -- if sTooltip:match("Psi Energy") then
-            if sTooltip:match(".*,.*%d.*,.*%d.*%.") and not sTooltip:match(".*, %d.*,.*%d.*%d.*%d") then -- to possibly work for more localization, assuming some comma usage and 2 numbers, and not the Innate buff
+            if sTooltip:match(self.sPsiChargeDescription) then
+            --if sTooltip:match(".*,.*%d.*,.*%d.*%.") and not sTooltip:match(".*, %d.*,.*%d.*%d.*%d") then -- to possibly work for more localization, assuming some comma usage and 2 numbers, and not the Innate buff
                 wBuff:Show(true)
                 bFound = true
 
