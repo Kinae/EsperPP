@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.157"
+local sVersion = "9.1.1.2"
 
 require "Window"
 require "GameLib"
