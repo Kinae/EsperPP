@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.0.156"
+local sVersion = "9.1.0.157"
 
 require "Window"
 require "GameLib"
@@ -654,7 +654,7 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                             if not v then
                                 self.db.profile.bShowCBTestBars = v
                                 self:ShowCBTestBars(v)
-                                for i=1, 3 do
+                                for i=1, 4 do
                                     local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
                                     if self.tCBTracker[i] then
                                         bar:Show(true)
@@ -1240,7 +1240,7 @@ function addon:DelayedAbilityBookCheck()
     else
         self.splCB = nil
         self.tCBChargeData = nil
-        for i=1, 3 do
+        for i=1, 4 do
             local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
             bar:Show(false)
         end
@@ -1278,6 +1278,7 @@ function addon:FastTimer()
         if self.tCBTracker[1] and self.nMyTime > self.tCBTracker[1].nEndTime then table.remove(self.tCBTracker, 1) end
         if self.tCBTracker[2] and self.nMyTime > self.tCBTracker[2].nEndTime then table.remove(self.tCBTracker, 2) end
         if self.tCBTracker[3] and self.nMyTime > self.tCBTracker[3].nEndTime then table.remove(self.tCBTracker, 3) end
+        if self.tCBTracker[4] and self.nMyTime > self.tCBTracker[4].nEndTime then table.remove(self.tCBTracker, 4) end
 
         local tChargeData = self.splCB:GetAbilityCharges()
         if tChargeData.nChargesRemaining < self.tCBChargeData.nChargesRemaining then
@@ -1289,7 +1290,7 @@ function addon:FastTimer()
         end
         self.tCBChargeData = tChargeData
 
-        for i=1, 3 do
+        for i=1, 4 do
             local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
             if self.tCBTracker[i] then
                 bar:Show(true)
@@ -1500,7 +1501,7 @@ end
 
 function addon:SetCBBarColors()
     local db = self.db.profile
-    for i=1, 3 do
+    for i=1, 4 do
         local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
         local r,g,b,a = unpack(db.CBBarColor)
         bar:SetBarColor(CColor.new(r,g,b,a))
@@ -1511,7 +1512,7 @@ end
 
 local function startCBTestBars()
     if not addon.nMyTime then return end
-    for i = 1, 3 do
+    for i = 1, 4 do
        local tTrackingData = {}
        tTrackingData.nStartTime = addon.nMyTime
        tTrackingData.nEndTime = addon.nMyTime+3
@@ -1586,7 +1587,7 @@ do
         -- apply db settings to the GeminiGUI window def
         self:RepositionCBDisplay()
         
-        for i=1, 3 do
+        for i=1, 4 do
             local wCBBar = Apollo.LoadForm("EsperPP.xml", "CBProgressBar", self.wCBDisplay, self)
             wCBBar:SetName(("CBProgressBar%d"):format(i))
             wCBBar:SetAnchorOffsets(0,(i-1)*db.nCBHeight+(i-1)*db.nCBPadding,0,i*db.nCBHeight+(i-1)*db.nCBPadding)
@@ -1621,7 +1622,7 @@ end
 function addon:RepositionCBDisplay()
     local db = self.db.profile
     local l,t,r,b = self.wCBAnchor:GetAnchorOffsets()
-    self.wCBDisplay:SetAnchorOffsets(l,b,l+db.nCBWidth,b+db.nCBHeight*3+db.nCBPadding*2)
+    self.wCBDisplay:SetAnchorOffsets(l,b,l+db.nCBWidth,b+db.nCBHeight*4+db.nCBPadding*3)
 end
 
 function addon:OnAnchorMove(wHandler)
