@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.1.3"
+local sVersion = "9.1.1.4"
 
 require "Window"
 require "GameLib"
@@ -760,148 +760,148 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                 name = "Psi Charge",
                 type = "group",
                 args={
-                    psiChargeDescriptionHeader = {
-                        order = 1,
-                        name = "Psi charge READ ME!",
-                        type = "header",
-                    },
-                    psiChargeDescription = {
-                        order = 2,
-                        name = [[Psi Charge tracking finally available! Sadly I had to do all kinds of workarounds to get it somewhat usable and the result is not pretty, but at least functional. Till Carbine fixes the API I don't think it is going to get any better than this.
+--                     psiChargeDescriptionHeader = {
+--                         order = 1,
+--                         name = "Psi charge READ ME!",
+--                         type = "header",
+--                     },
+--                     psiChargeDescription = {
+--                         order = 2,
+--                         name = [[Psi Charge tracking finally available! Sadly I had to do all kinds of workarounds to get it somewhat usable and the result is not pretty, but at least functional. Till Carbine fixes the API I don't think it is going to get any better than this.
  
-On to the caveats: I think the default settings are pretty good and you probably just want to reposition the display, but I included some options to try and make it more customizable. Basically there is no way to get the stacks number directly, so the best you can do is to scale up the buff icon and only show that scaled up ugly number in the top left corner of a container window and then move it to the right a bit with some offset values. You could try and set the scale to 1 and have no offsets, but then I think the stack number (the number you care about) will be very small.
+-- On to the caveats: I think the default settings are pretty good and you probably just want to reposition the display, but I included some options to try and make it more customizable. Basically there is no way to get the stacks number directly, so the best you can do is to scale up the buff icon and only show that scaled up ugly number in the top left corner of a container window and then move it to the right a bit with some offset values. You could try and set the scale to 1 and have no offsets, but then I think the stack number (the number you care about) will be very small.
  
-If you messed with the settings but could not quite get it the way you wanted, there is a reset button on the bottom of this configuration window. You can use that to set the psi charger tracker back to it's default settings.
-                        ]],
-                        type = "description",
-                    },
+-- If you messed with the settings but could not quite get it the way you wanted, there is a reset button on the bottom of this configuration window. You can use that to set the psi charger tracker back to it's default settings.
+--                         ]],
+--                         type = "description",
+--                     },
                     psiChargeOptionsHeader = {
                         order = 3,
                         name = "Psi charge options",
                         type = "header",
                     },
-                    bShowPsiChargeAnchor = {
-                        order = 4,
-                        name = "Show psi charge anchor",
-                        type = "toggle",
-                        width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:HideShowPsiChargeContainer(v) end,
-                    },
+                    -- bShowPsiChargeAnchor = {
+                    --     order = 4,
+                    --     name = "Show psi charge anchor",
+                    --     type = "toggle",
+                    --     width = "full",
+                    --     set = function(info, v) self.db.profile[info[#info]] = v; self:HideShowPsiChargeContainer(v) end,
+                    -- },
                     bShowPsiCharge = {
                         order = 5,
                         name = "Show psi charge tracker",
                         type = "toggle",
                         width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v; self:TogglePsichargeTracker(v)
+                        set = function(info, v) self.db.profile[info[#info]] = v; --self:TogglePsichargeTracker(v)
                         -- XXX uncomment this for next patch
-                            -- self.db.profile.bShowPCCounter = v
-                            -- self.wDisplay:FindChild("PCCounter"):Show(v)
-                            -- self.db.profile.bShowPCBars = v
-                            -- self.wDisplay:FindChild("PCBar1"):Show(v)
-                            -- self.wDisplay:FindChild("PCBar2"):Show(v)
+                            self.db.profile.bShowPCCounter = v
+                            self.wDisplay:FindChild("PCCounter"):Show(v)
+                            self.db.profile.bShowPCBars = v
+                            self.wDisplay:FindChild("PCBar1"):Show(v)
+                            self.wDisplay:FindChild("PCBar2"):Show(v)
                         end,
                     },
 
                     -- XXX uncomment this for next patch
-                    -- bShowPCCounter = {
-                    --     order = 20,
-                    --     name = "Show psi charge numeric counter",
-                    --     type = "toggle",
+                    bShowPCCounter = {
+                        order = 20,
+                        name = "Show psi charge numeric counter",
+                        type = "toggle",
+                        width = "full",
+                        disabled = function() return not self.db.profile.bShowPsiCharge end,
+                        set = function(info, v) self.db.profile[info[#info]] = v; self.wDisplay:FindChild("PCCounter"):Show(v) end,
+                    },
+                    bShowPCBars = {
+                        order = 30,
+                        name = "Show psi charge bar display",
+                        type = "toggle",
+                        width = "full",
+                        disabled = function() return not self.db.profile.bShowPsiCharge end,
+                        set = function(info, v) self.db.profile[info[#info]] = v;
+                            self.wDisplay:FindChild("PCBar1"):Show(v)
+                            self.wDisplay:FindChild("PCBar2"):Show(v)
+                        end,
+                    },
+                    PCColor1 = {
+                        order = 40,
+                        name = "Color for 1 psi charge",
+                        type = "color",
+                        hasAlpha = true,
+                        get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
+                    },
+                    PCColor2 = {
+                        order = 50,
+                        name = "Color for 2 psi charge",
+                        type = "color",
+                        hasAlpha = true,
+                        get = function(info) return unpack(self.db.profile[info[#info]]) end,
+                        set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
+                    },
+
+                    -- nPsiChargeScale = {
+                    --     order = 10,
+                    --     name = "Psi charge scale",
+                    --     type = "range",
+                    --     min = 1,
+                    --     max = 6,
+                    --     step = 0.1,
                     --     width = "full",
-                    --     disabled = function() return not self.db.profile.bShowPsiCharge end,
-                    --     set = function(info, v) self.db.profile[info[#info]] = v; self.wDisplay:FindChild("PCCounter"):Show(v) end,
-                    -- },
-                    -- bShowPCBars = {
-                    --     order = 30,
-                    --     name = "Show psi charge bar display",
-                    --     type = "toggle",
-                    --     width = "full",
-                    --     disabled = function() return not self.db.profile.bShowPsiCharge end,
                     --     set = function(info, v) self.db.profile[info[#info]] = v;
-                    --         self.wDisplay:FindChild("PCBar1"):Show(v)
-                    --         self.wDisplay:FindChild("PCBar2"):Show(v)
+                    --         if self.wBuffBar then
+                    --             self.wBuffBar:SetScale(v)
+                    --         end
                     --     end,
                     -- },
-                    -- PCColor1 = {
-                    --     order = 40,
-                    --     name = "Color for 1 psi charge",
-                    --     type = "color",
-                    --     hasAlpha = true,
-                    --     get = function(info) return unpack(self.db.profile[info[#info]]) end,
-                    --     set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
+                    -- nPsiChargeBuffWindowOffset = {
+                    --     order = 15,
+                    --     name = "Psi charge buff window offset",
+                    --     type = "range",
+                    --     min = -50,
+                    --     max = 50,
+                    --     step = 1,
+                    --     width = "full",
                     -- },
-                    -- PCColor2 = {
-                    --     order = 50,
-                    --     name = "Color for 2 psi charge",
-                    --     type = "color",
-                    --     hasAlpha = true,
-                    --     get = function(info) return unpack(self.db.profile[info[#info]]) end,
-                    --     set = function(info, r,g,b,a) self.db.profile[info[#info]] = {r,g,b,a} end,
+                    -- nPsiChargeOpacity = {
+                    --     order = 20,
+                    --     name = "Psi charge opacity",
+                    --     type = "range",
+                    --     min = 0,
+                    --     max = 1,
+                    --     step = 0.01,
+                    --     width = "full",
+                    --     set = function(info, v) self.db.profile[info[#info]] = v;
+                    --         if self.wBuffBar then
+                    --             self.wBuffBar:SetOpacity(v)
+                    --         end
+                    --     end,
                     -- },
-
-                    nPsiChargeScale = {
-                        order = 10,
-                        name = "Psi charge scale",
-                        type = "range",
-                        min = 1,
-                        max = 6,
-                        step = 0.1,
-                        width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v;
-                            if self.wBuffBar then
-                                self.wBuffBar:SetScale(v)
-                            end
-                        end,
-                    },
-                    nPsiChargeBuffWindowOffset = {
-                        order = 15,
-                        name = "Psi charge buff window offset",
-                        type = "range",
-                        min = -50,
-                        max = 50,
-                        step = 1,
-                        width = "full",
-                    },
-                    nPsiChargeOpacity = {
-                        order = 20,
-                        name = "Psi charge opacity",
-                        type = "range",
-                        min = 0,
-                        max = 1,
-                        step = 0.01,
-                        width = "full",
-                        set = function(info, v) self.db.profile[info[#info]] = v;
-                            if self.wBuffBar then
-                                self.wBuffBar:SetOpacity(v)
-                            end
-                        end,
-                    },
-                    restHeader = {
-                        order = 100,
-                        name = "Reset psi charge options",
-                        type = "header",
-                    },
-                    restToDefaults = {
-                        order = 101,
-                        name = "Reset",
-                        type = "execute",
-                        width = "full",
-                        func = function()
-                            self.db.profile.bShowPsiChargeAnchor = true
-                            local l,t,r,b = unpack(defaults.profile.tPsiChargePos)
-                            self.db.profile.tPsiChargePos = {l,t,r,b}
-                            self.wPsiChargeContainer:SetAnchorOffsets(unpack(defaults.profile.tPsiChargePos))
-                            self.wPsiChargeContainer:SetTooltip("Psi Charge anchor, you can move and resize this")
-                            self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeScale
-                            self.db.profile.nPsiChargeBuffWindowOffset = defaults.profile.nPsiChargeBuffWindowOffset
-                            self.db.profile.nPsiChargeOpacity = defaults.profile.nPsiChargeOpacity
-                            self:HideShowPsiChargeContainer(true)
-                            if self.wBuffBar then
-                                self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
-                                self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
-                            end
-                        end,
-                    },
+                    -- restHeader = {
+                    --     order = 100,
+                    --     name = "Reset psi charge options",
+                    --     type = "header",
+                    -- },
+                    -- restToDefaults = {
+                    --     order = 101,
+                    --     name = "Reset",
+                    --     type = "execute",
+                    --     width = "full",
+                    --     func = function()
+                    --         self.db.profile.bShowPsiChargeAnchor = true
+                    --         local l,t,r,b = unpack(defaults.profile.tPsiChargePos)
+                    --         self.db.profile.tPsiChargePos = {l,t,r,b}
+                    --         self.wPsiChargeContainer:SetAnchorOffsets(unpack(defaults.profile.tPsiChargePos))
+                    --         self.wPsiChargeContainer:SetTooltip("Psi Charge anchor, you can move and resize this")
+                    --         self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeScale
+                    --         self.db.profile.nPsiChargeBuffWindowOffset = defaults.profile.nPsiChargeBuffWindowOffset
+                    --         self.db.profile.nPsiChargeOpacity = defaults.profile.nPsiChargeOpacity
+                    --         -- self:HideShowPsiChargeContainer(true)
+                    --         if self.wBuffBar then
+                    --             self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+                    --             self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+                    --         end
+                    --     end,
+                    -- },
                     GeminiConfigScrollingFrameBottomWidgetFix = {
                         order = 9999,
                         name = "",
@@ -1036,17 +1036,17 @@ function addon:OnEnable()
     Apollo.RegisterSlashCommand("epp", "OpenMenu", self)
 
     -- create anchors and windows and load database values
-    self.wPsiChargeContainer = GeminiGUI:Create("Window", self.tPsiChargeContainerDef):GetInstance(self)
+    -- self.wPsiChargeContainer = GeminiGUI:Create("Window", self.tPsiChargeContainerDef):GetInstance(self)
     -- self.wPsiChargeContainer = Apollo.LoadForm("EsperPP.xml", "PsiChargeContainer", nil, self)
-    self.wPsiChargeContainer:SetAnchorOffsets(unpack(self.db.profile.tPsiChargePos))
-    self:HideShowPsiChargeContainer(self.db.profile.bShowPsiChargeAnchor)
-    self.wPsiChargeContainer:AddEventHandler("WindowMove", "OnMoveOrResizePsiChargeContainer", self)
-    self.wPsiChargeContainer:AddEventHandler("WindowSizeChanged", "OnMoveOrResizePsiChargeContainer", self)
-    if self.db.profile.bShowPsiCharge then
-        self:CreateBuffBarForPsiCharge()
-        self:OnMoveOrResizePsiChargeContainer()
-        self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
-    end
+    -- self.wPsiChargeContainer:SetAnchorOffsets(unpack(self.db.profile.tPsiChargePos))
+    -- self:HideShowPsiChargeContainer(self.db.profile.bShowPsiChargeAnchor)
+    -- self.wPsiChargeContainer:AddEventHandler("WindowMove", "OnMoveOrResizePsiChargeContainer", self)
+    -- self.wPsiChargeContainer:AddEventHandler("WindowSizeChanged", "OnMoveOrResizePsiChargeContainer", self)
+    -- if self.db.profile.bShowPsiCharge then
+    --     -- self:CreateBuffBarForPsiCharge()
+    --     -- self:OnMoveOrResizePsiChargeContainer()
+    --     -- self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+    -- end
 
     self.wFocus = Apollo.LoadForm("EsperPP.xml", "Focus", nil, self)
     self.wFocus:Show(true)
@@ -1195,8 +1195,9 @@ function addon:getCBSpellIds()
     local tList = AbilityBook.GetAbilitiesList()
     for nIndex, tData in ipairs(tList) do
         if tData.nId == 28756 then
+        -- if tData.strName == "Concentrated Blade" then
             for nTier, tTierData in ipairs(tData.tTiers) do
-                Print(("Tier: %d - nSpellId: %d"):format(nTier, tTierData.splObject:GetId()))
+                Print(("Tier: %d - nSpellId: %d nId: %d"):format(nTier, tTierData.splObject:GetId(), tData.nId))
             end
         end
     end
@@ -1297,23 +1298,25 @@ function addon:FastTimer()
         if self.tCBTracker[4] and self.nMyTime > self.tCBTracker[4].nEndTime then table.remove(self.tCBTracker, 4) end
 
         local tChargeData = self.splCB:GetAbilityCharges()
-        if tChargeData.nChargesRemaining < self.tCBChargeData.nChargesRemaining then
-            local tTrackingData = {}
-            tTrackingData.nStartTime = self.nMyTime
-            tTrackingData.nEndTime = self.nMyTime+3
+        if tChargeData then
+            if tChargeData.nChargesRemaining < self.tCBChargeData.nChargesRemaining then
+                local tTrackingData = {}
+                tTrackingData.nStartTime = self.nMyTime
+                tTrackingData.nEndTime = self.nMyTime+3
 
-            self.tCBTracker[#self.tCBTracker+1] = tTrackingData
-        end
-        self.tCBChargeData = tChargeData
+                self.tCBTracker[#self.tCBTracker+1] = tTrackingData
+            end
+            self.tCBChargeData = tChargeData
 
-        for i=1, 4 do
-            local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
-            if self.tCBTracker[i] then
-                bar:Show(true)
-                bar:SetMax(self.tCBTracker[i].nEndTime-self.tCBTracker[i].nStartTime)
-                bar:SetProgress(self.nMyTime-self.tCBTracker[i].nStartTime)
-            else
-                bar:Show(false)
+            for i=1, 4 do
+                local bar = self.wCBDisplay:FindChild(("CBProgressBar%d"):format(i))
+                if self.tCBTracker[i] then
+                    bar:Show(true)
+                    bar:SetMax(self.tCBTracker[i].nEndTime-self.tCBTracker[i].nStartTime)
+                    bar:SetProgress(self.nMyTime-self.tCBTracker[i].nStartTime)
+                else
+                    bar:Show(false)
+                end
             end
         end
     end
@@ -1395,45 +1398,45 @@ function addon:OnUpdate()
 
     -- T8 builder stack tracking
     -- this works on PTR only for now
-    -- if self.db.profile.bShowPsiCharge then
-    --     local tBuffs = uPlayer:GetBuffs().arBeneficial
-    --     local bHasPsiCharge = false
-    --     if tBuffs then
-    --         for i=1, #tBuffs do
-    --             if tBuffs[i].splEffect and tBuffs[i].splEffect:GetId() == 51964 then -- obviously the Psi Charge spellId
-    --                 bHasPsiCharge = true
-    --                 local nCount = tBuffs[i].nCount
-    --                 if nCount and nCount > 0 and nCount < 3 then
-    --                     if self.db.profile.bShowPCCounter then
-    --                         self.wPCCounter:SetText(nCount)
-    --                         self.wPCCounter:SetTextColor(self.db.profile["PCColor"..nCount])
-    --                         self.wPCCounter:Show(true)
-    --                     end
-    --                     if self.db.profile.bShowPCBars then
-    --                         self.tPCBars[nCount]:SetProgress(1)
-    --                     end
-    --                 end
-    --             end
-    --         end
-    --         if not bHasPsiCharge then
-    --             if self.db.profile.bShowPCCounter then
-    --                 self.wPCCounter:Show(false)
-    --             end
-    --             if self.db.profile.bShowPCBars then
-    --                 self.tPCBars[1]:SetProgress(0)
-    --                 self.tPCBars[2]:SetProgress(0)
-    --             end
-    --         end
-    --     else
-    --         if self.db.profile.bShowPCCounter then
-    --             self.wPCCounter:Show(false)
-    --         end
-    --         if self.db.profile.bShowPCBars then
-    --             self.tPCBars[1]:SetProgress(0)
-    --             self.tPCBars[2]:SetProgress(0)
-    --         end
-    --     end
-    -- end
+    if self.db.profile.bShowPsiCharge then
+        local tBuffs = uPlayer:GetBuffs().arBeneficial
+        local bHasPsiCharge = false
+        if tBuffs then
+            for i=1, #tBuffs do
+                if tBuffs[i].splEffect and tBuffs[i].splEffect:GetId() == 51964 then -- obviously the Psi Charge spellId
+                    bHasPsiCharge = true
+                    local nCount = tBuffs[i].nCount
+                    if nCount and nCount > 0 and nCount < 3 then
+                        if self.db.profile.bShowPCCounter then
+                            self.wPCCounter:SetText(nCount)
+                            self.wPCCounter:SetTextColor(self.db.profile["PCColor"..nCount])
+                            self.wPCCounter:Show(true)
+                        end
+                        if self.db.profile.bShowPCBars then
+                            self.tPCBars[nCount]:SetProgress(1)
+                        end
+                    end
+                end
+            end
+            if not bHasPsiCharge then
+                if self.db.profile.bShowPCCounter then
+                    self.wPCCounter:Show(false)
+                end
+                if self.db.profile.bShowPCBars then
+                    self.tPCBars[1]:SetProgress(0)
+                    self.tPCBars[2]:SetProgress(0)
+                end
+            end
+        else
+            if self.db.profile.bShowPCCounter then
+                self.wPCCounter:Show(false)
+            end
+            if self.db.profile.bShowPCBars then
+                self.tPCBars[1]:SetProgress(0)
+                self.tPCBars[2]:SetProgress(0)
+            end
+        end
+    end
 
     
     if self.bMBonLAS and self.db.profile.bShowMBAssist then
@@ -1574,13 +1577,13 @@ do
 
         -- CB stuff, it is here so players don't have to bother with moving it individually
         -- XXX uncomment this for next patch
-        -- self.tPCBars = {self.wDisplay:FindChild("PCBar1"), self.wDisplay:FindChild("PCBar2")}
-        -- for i=1, #self.tPCBars do
-        --     self.tPCBars[i]:Show(self.db.profile.bShowPCBars)
-        --     self.tPCBars[i]:SetMax(1)
-        -- end
-        -- self.wPCCounter = self.wDisplay:FindChild("PCCounter")
-        -- self.wPCCounter:Show(self.db.profile.bShowPCCounter)
+        self.tPCBars = {self.wDisplay:FindChild("PCBar1"), self.wDisplay:FindChild("PCBar2")}
+        for i=1, #self.tPCBars do
+            self.tPCBars[i]:Show(self.db.profile.bShowPCBars)
+            self.tPCBars[i]:SetMax(1)
+        end
+        self.wPCCounter = self.wDisplay:FindChild("PCCounter")
+        self.wPCCounter:Show(self.db.profile.bShowPCCounter)
 
         self:RepositionDisplay()
     end
@@ -1620,7 +1623,7 @@ function addon:LockUnlock(bValue)
     self.wCBAnchor:Show(bValue)
 
     self.db.profile.bShowPsiChargeAnchor = bValue
-    self:HideShowPsiChargeContainer(bValue)
+    -- self:HideShowPsiChargeContainer(bValue)
 
     self.db.profile.bShowFocusAnchor = bValue
     self:LockUnlockFocusAnchor(bValue)
@@ -1681,9 +1684,9 @@ function addon:HideFocus()
 end
 
 function addon:CreateBuffBarForPsiCharge()
-    self.wBuffBar = GeminiGUI:Create("BuffContainerWindow", self.tBuffBarDef):GetInstance(self, self.wPsiChargeContainer)
-    self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
-    self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
+    -- self.wBuffBar = GeminiGUI:Create("BuffContainerWindow", self.tBuffBarDef):GetInstance(self, self.wPsiChargeContainer)
+    -- self.wBuffBar:SetScale(self.db.profile.nPsiChargeScale)
+    -- self.wBuffBar:SetOpacity(self.db.profile.nPsiChargeOpacity)
 end
 
 function addon:TogglePsichargeTracker(bEnable)
@@ -1702,18 +1705,18 @@ function addon:TogglePsichargeTracker(bEnable)
         end
     end
     if bEnable then
-        self:CreateBuffBarForPsiCharge()
-        self:OnMoveOrResizePsiChargeContainer()
-        self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
+        -- self:CreateBuffBarForPsiCharge()
+        -- self:OnMoveOrResizePsiChargeContainer()
+        -- self.buffUpdaterTimer = self:ScheduleRepeatingTimer("BuffBarFilterUpdater", 0.1)
     end
 end
 
 function addon:PsiChargeDebugger()
     if not uPlayer then return end
-    if (os.clock() - self.nLastPsiChargeDebug) >= 60 and not uPlayer:IsInCombat() and self.db.profile.bShowPsiCharge then
-        self.nLastPsiChargeDebug = os.clock()
-        self:TogglePsichargeTracker(true)
-    end
+    -- if (os.clock() - self.nLastPsiChargeDebug) >= 60 and not uPlayer:IsInCombat() and self.db.profile.bShowPsiCharge then
+    --     self.nLastPsiChargeDebug = os.clock()
+    --     self:TogglePsichargeTracker(true)
+    -- end
 end
 
 function addon:ToggleCBTrackerTimer(bEnable)
@@ -1728,19 +1731,19 @@ end
 
 function addon:OnMoveOrResizePsiChargeContainer(wHandler, wControl)
     if wHandler ~= wControl then return end
-    local l,t,r,b = self.wPsiChargeContainer:GetAnchorOffsets()
-    self.db.profile.tPsiChargePos = {l,t,r,b}
+    -- local l,t,r,b = self.wPsiChargeContainer:GetAnchorOffsets()
+    -- self.db.profile.tPsiChargePos = {l,t,r,b}
 
-    if self.wBuffBar then
-        self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
-    end
+    -- if self.wBuffBar then
+    --     self.wBuffBar:SetAnchorOffsets(-1,-1,1,1)
+    -- end
 end
 
 function addon:HideShowPsiChargeContainer(bValue)
-    self.wPsiChargeContainer:SetText(bValue and "PC" or "")
-    self.wPsiChargeContainer:SetStyle("Picture", bValue)
-    self.wPsiChargeContainer:SetStyle("Moveable", bValue)
-    self.wPsiChargeContainer:SetStyle("Sizable", bValue)
-    self.wPsiChargeContainer:SetStyle("IgnoreMouse", not bValue)
-    self.wPsiChargeContainer:SetTooltip(bValue and "Psi Charge anchor, you can move and resize this" or "")
+    -- self.wPsiChargeContainer:SetText(bValue and "PC" or "")
+    -- self.wPsiChargeContainer:SetStyle("Picture", bValue)
+    -- self.wPsiChargeContainer:SetStyle("Moveable", bValue)
+    -- self.wPsiChargeContainer:SetStyle("Sizable", bValue)
+    -- self.wPsiChargeContainer:SetStyle("IgnoreMouse", not bValue)
+    -- self.wPsiChargeContainer:SetTooltip(bValue and "Psi Charge anchor, you can move and resize this" or "")
 end
