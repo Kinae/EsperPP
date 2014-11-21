@@ -15,7 +15,7 @@
         shockwave circle that only shows when CD is about to be ready and only during combat
 ]]--
 
-local sVersion = "9.1.1.4"
+local sVersion = "9.1.1.5"
 
 require "Window"
 require "GameLib"
@@ -892,7 +892,7 @@ It might be a good idea to toggle "Show 0 psi point" while testing different fon
                     --         self.db.profile.tPsiChargePos = {l,t,r,b}
                     --         self.wPsiChargeContainer:SetAnchorOffsets(unpack(defaults.profile.tPsiChargePos))
                     --         self.wPsiChargeContainer:SetTooltip("Psi Charge anchor, you can move and resize this")
-                    --         self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeScale
+                    --         self.db.profile.nPsiChargeScale = defaults.profile.nPsiChargeSyyyyycale
                     --         self.db.profile.nPsiChargeBuffWindowOffset = defaults.profile.nPsiChargeBuffWindowOffset
                     --         self.db.profile.nPsiChargeOpacity = defaults.profile.nPsiChargeOpacity
                     --         -- self:HideShowPsiChargeContainer(true)
@@ -1451,7 +1451,7 @@ function addon:OnUpdate()
                 local rotPlus = rot+math.rad(self.nMBDegree) -- offset
                 local rotNeg = rot+math.rad(-self.nMBDegree) -- offset
 
-                local nOffset, nOffsetDegree = 1, 180 -- center point is not on the player but behind it
+                local nOffset, nOffsetDegree = 0, 180 -- center point IS on the player since drop 3
 
                 local crColor = self:GetMBAssistColor(nPP)
                 -- lines 1
