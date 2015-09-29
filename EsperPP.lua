@@ -1328,7 +1328,7 @@ function addon:NotSoFastTimer()
     -- Focus display
     if self.wFocus and self.wFocus:IsShown() then
         local bar = self.wFocus:FindChild("FocusProgress")
-        local nCurr, nMax = uPlayer:GetMana(), uPlayer:GetMaxMana()
+        local nCurr, nMax = uPlayer:GetFocus(), uPlayer:GetMaxFocus()
         bar:SetMax(nMax)
         bar:SetProgress(nCurr)
         bar:SetText(formatFocusText(self.db.profile.focusTextStyle, nCurr, nMax))
