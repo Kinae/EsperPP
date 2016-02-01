@@ -44,3 +44,4 @@ Espers.
 
 ##How to install:
 Extract the EsperPP.zip file into the Wildstar Addon folder ( which can be found at %APPDATA%\Roaming\NCSOFT\WildStar\Addons by default, if you can't find the Addons folder, then create it! )
+
