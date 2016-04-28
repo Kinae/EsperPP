@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Addon Author="Caleb" APIVersion="11" Name="EsperPP" Description="Esper helper. /epp" Version="11.0.0.1">
+<Addon Author="Caleb" APIVersion="11" Name="EsperPP" Description="Esper helper. /epp" Version="12.0.0.0">
 	<Script Name="Libs/GeminiAddon/GeminiAddon.lua"/>
 	<Script Name="Libs/GeminiColor/GeminiColor.lua"/>
 	<Script Name="Libs/GeminiDB/GeminiDB-1.0.lua"/>

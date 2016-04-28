@@ -55,16 +55,6 @@ local GeminiConfig = Apollo.GetPackage("Gemini:Config-1.0").tPackage
 --local GeminiCmd = Apollo.GetPackage("Gemini:ConfigCmd-1.0").tPackage
 local L = Apollo.GetPackage("Gemini:Locale-1.0").tPackage:GetLocale("EsperPP", true)
 
--- function getPC()
---     for i=1, 1000000 do
---         local spell = GameLib.GetSpell(i)
---         if  spell and spell:GetFlavor() and spell:GetFlavor():find("Building up Psi Energy")then
---             D(i)
---         end
---     end
--- end
-
-
 -----------------------------------------------------------------------------------------------
 -- Locals and defaults
 -----------------------------------------------------------------------------------------------
@@ -1026,8 +1016,8 @@ function addon:OnEnable()
 
     self.sPsiChargeDescription = ""
     local spell = GameLib.GetSpell(nPsiChargeBuffId)
-    if spell and spell:GetFlavor() then
-        self.sPsiChargeDescription = spell:GetFlavor()
+    if spell and spell:GetTooltips() then
+        self.sPsiChargeDescription = spell:GetTooltips()
     end
     GeminiConfig:RegisterOptionsTable("EsperPP", self.myOptionsTable)
 
